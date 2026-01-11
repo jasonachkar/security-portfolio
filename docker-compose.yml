@@ -1,0 +1,258 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  traefik:
+    image: traefik:v2.11
+    ports:
+      - "8000:8000"     # API gateway
+      - "8081:8080"     # Traefik dashboard
+    volumes:
+      - ./traefik:/etc/traefik:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - security-platform
+
+  # Shared PostgreSQL (separate databases for each service)
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - security-platform
+
+  # Shared Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - security-platform
+
+  # Auth Service
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./auth-service/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/auth_db
+      APP_ENV: local
+      LOG_LEVEL: INFO
+      JWT_SECRET: dev-jwt-secret-change-in-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - security-platform
+
+  # Vulnerability Scanner
+  vuln-scanner:
+    build:
+      context: .
+      dockerfile: ./vulnerability-scanner/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/vuln_scanner_db
+      REDIS_URL: redis://redis:6379/0
+      ZAP_BASE_URL: http://zap:8090
+      AUTH_TOKEN: dev-token
+      ALLOWED_TARGETS: localhost,127.0.0.1,example.com
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      zap:
+        condition: service_started
+    networks:
+      - security-platform
+
+  # Network Traffic Analyzer
+  network-analyzer:
+    build:
+      context: .
+      dockerfile: ./network-traffic-analyzer/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/network_analyzer_db
+      AUTH_TOKEN: dev-token
+      CAPTURE_INTERFACE: any
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    network_mode: host
+
+  # Security Assessment Orchestrator
+  orchestrator:
+    build:
+      context: .
+      dockerfile: ./security-assessment-orchestrator/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/orchestrator_db
+      REDIS_URL: redis://redis:6379/1
+      ZAP_BASE_URL: http://zap:8090
+      AUTH_TOKEN: dev-token
+      ALLOWED_TARGETS: localhost,127.0.0.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - security-platform
+
+  # Threat Intelligence Service
+  threat-intel:
+    build:
+      context: .
+      dockerfile: ./threat-intel-service/Dockerfile
+    ports:
+      - "8084:8084"
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/threat_intel_db
+      REDIS_URL: redis://redis:6379/2
+      APP_ENV: local
+      LOG_LEVEL: INFO
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      NVD_API_KEY: ""  # Optional NVD API key for higher rate limits
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - security-platform
+
+  # Threat Intel Celery Worker
+  threat-intel-worker:
+    build:
+      context: .
+      dockerfile: ./threat-intel-service/Dockerfile
+    command: celery -A threat_intel.workers.celery_app worker --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/threat_intel_db
+      REDIS_URL: redis://redis:6379/2
+      APP_ENV: local
+      LOG_LEVEL: INFO
+      NVD_API_KEY: ""
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - security-platform
+
+  # Threat Intel Celery Beat (Scheduler)
+  threat-intel-beat:
+    build:
+      context: .
+      dockerfile: ./threat-intel-service/Dockerfile
+    command: celery -A threat_intel.workers.celery_app beat --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/threat_intel_db
+      REDIS_URL: redis://redis:6379/2
+      APP_ENV: local
+      LOG_LEVEL: INFO
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - security-platform
+
+  # Alert Correlation Service
+  alert-correlation:
+    build:
+      context: .
+      dockerfile: ./alert-correlation-service/Dockerfile
+    ports:
+      - "8085:8085"
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/alert_correlation_db
+      REDIS_URL: redis://redis:6379/3
+      APP_ENV: local
+      LOG_LEVEL: INFO
+      JWT_SECRET: dev-jwt-secret-change-in-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - security-platform
+
+  # Compliance Service
+  compliance:
+    build:
+      context: .
+      dockerfile: ./compliance-service/Dockerfile
+    ports:
+      - "8086:8086"
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/compliance_db
+      APP_ENV: local
+      LOG_LEVEL: INFO
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      REPORT_STORAGE_PATH: /app/reports
+    volumes:
+      - compliance_reports:/app/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - security-platform
+
+  # OWASP ZAP (for scanning)
+  zap:
+    image: zaproxy/zap-stable:latest
+    command: zap.sh -daemon -host 0.0.0.0 -port 8090 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true -config api.disablekey=true
+    ports:
+      - "8090:8090"
+    networks:
+      - security-platform
+
+  # UI (Nginx serving React app)
+  ui:
+    build: ./security-platform-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - traefik
+    networks:
+      - security-platform
+
+networks:
+  security-platform:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  compliance_reports:
