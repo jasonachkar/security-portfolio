@@ -1,0 +1,39 @@
+name: Portfolio Evidence
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/reviewer-ui/package-lock.json
+      - run: npm ci
+        working-directory: apps/reviewer-ui
+      - run: npm run build
+        working-directory: apps/reviewer-ui
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/reviewer-ui
+      - run: npm run test:e2e
+        working-directory: apps/reviewer-ui
+      - run: |
+          npm run dev -- --host 127.0.0.1 &
+          sleep 8
+          npm run evidence:screenshots
+        working-directory: apps/reviewer-ui
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-evidence
+          path: |
+            evidence/screenshots
+            apps/reviewer-ui/playwright-report
+            apps/reviewer-ui/test-results

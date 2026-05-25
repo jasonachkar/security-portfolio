@@ -1,0 +1,221 @@
+services:
+  gateway:
+    build:
+      context: ../..
+      dockerfile: apps/gateway/Dockerfile
+    environment:
+      APP_ENV: local
+      PORT: 3000
+      HOST: 0.0.0.0
+      JWT_SECRET: ${JWT_SECRET:-local-only-gateway-secret}
+      COOKIE_SECRET: ${COOKIE_SECRET:-local-only-cookie-secret}
+      SCANNER_URL: http://vulnerability-scanner:8080
+      NETWORK_URL: http://network-analyzer:8081
+      ASSESSMENT_URL: http://assessment-orchestrator:8082
+      UPSTREAM_ALLOWLIST: vulnerability-scanner,network-analyzer,assessment-orchestrator
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    ports:
+      - "3000:3000"
+    depends_on:
+      vulnerability-scanner:
+        condition: service_started
+      network-analyzer:
+        condition: service_started
+      assessment-orchestrator:
+        condition: service_started
+    networks:
+      - security-lab
+
+  vulnerability-scanner:
+    build:
+      context: ../..
+      dockerfile: apps/vulnerability-scanner/Dockerfile
+    environment:
+      APP_ENV: local
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/vuln_scanner_db
+      REDIS_URL: redis://redis:6379/0
+      ZAP_BASE_URL: http://zap:8090
+      AUTH_TOKEN: change-me
+      JWT_SECRET: ${JWT_SECRET:-local-only-gateway-secret}
+      ALLOWED_TARGETS: localhost,127.0.0.1,demo-app.local,host.docker.internal
+      SCAN_TIMEOUT_SECONDS: 300
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      zap:
+        condition: service_started
+    networks:
+      - security-lab
+
+  vulnerability-scanner-worker:
+    build:
+      context: ../..
+      dockerfile: apps/vulnerability-scanner/Dockerfile
+    command: python -m vulnerability_scanner.workers.worker
+    environment:
+      APP_ENV: local
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/vuln_scanner_db
+      REDIS_URL: redis://redis:6379/0
+      ZAP_BASE_URL: http://zap:8090
+      AUTH_TOKEN: change-me
+      JWT_SECRET: ${JWT_SECRET:-local-only-gateway-secret}
+      ALLOWED_TARGETS: localhost,127.0.0.1,demo-app.local,host.docker.internal
+    depends_on:
+      vulnerability-scanner:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - security-lab
+
+  network-analyzer:
+    build:
+      context: ../..
+      dockerfile: apps/network-analyzer/Dockerfile
+    environment:
+      APP_ENV: local
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/network_analyzer_db
+      AUTH_TOKEN: change-me
+      JWT_SECRET: ${JWT_SECRET:-local-only-gateway-secret}
+      CAPTURE_INTERFACE: any
+      CAPTURE_BPF: ""
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - security-lab
+
+  assessment-orchestrator:
+    build:
+      context: ../..
+      dockerfile: apps/assessment-orchestrator/Dockerfile
+    environment:
+      APP_ENV: local
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/orchestrator_db
+      REDIS_URL: redis://redis:6379/1
+      ZAP_BASE_URL: http://zap:8090
+      AUTH_TOKEN: change-me
+      JWT_SECRET: ${JWT_SECRET:-local-only-gateway-secret}
+      ALLOWED_TARGETS: localhost,127.0.0.1,demo-app.local,host.docker.internal
+      ENABLE_NMAP: "true"
+      ENABLE_ZAP: "true"
+      ENABLE_TRIVY: "false"
+      SUBPROCESS_TIMEOUT_SECONDS: 120
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      zap:
+        condition: service_started
+    networks:
+      - security-lab
+
+  assessment-orchestrator-worker:
+    build:
+      context: ../..
+      dockerfile: apps/assessment-orchestrator/Dockerfile
+    command: python -m security_assessment_orchestrator.workers.worker
+    environment:
+      APP_ENV: local
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/orchestrator_db
+      REDIS_URL: redis://redis:6379/1
+      ZAP_BASE_URL: http://zap:8090
+      AUTH_TOKEN: change-me
+      JWT_SECRET: ${JWT_SECRET:-local-only-gateway-secret}
+      ALLOWED_TARGETS: localhost,127.0.0.1,demo-app.local,host.docker.internal
+      ENABLE_NMAP: "true"
+      ENABLE_ZAP: "true"
+      ENABLE_TRIVY: "false"
+    depends_on:
+      assessment-orchestrator:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - security-lab
+
+  reviewer-ui:
+    build:
+      context: ../..
+      dockerfile: apps/reviewer-ui/Dockerfile
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000
+    ports:
+      - "5173:80"
+    depends_on:
+      gateway:
+        condition: service_started
+    networks:
+      - security-lab
+    profiles:
+      - reviewer
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - security-lab
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - security-lab
+
+  zap:
+    image: zaproxy/zap-stable:latest
+    command:
+      - zap.sh
+      - -daemon
+      - -host
+      - 0.0.0.0
+      - -port
+      - "8090"
+      - -config
+      - api.addrs.addr.name=.*
+      - -config
+      - api.addrs.addr.regex=true
+      - -config
+      - api.disablekey=true
+    networks:
+      - security-lab
+
+  traefik:
+    image: traefik:v2.11
+    profiles:
+      - traefik
+    ports:
+      - "8000:8000"
+      - "8080:8080"
+    volumes:
+      - ./traefik:/etc/traefik:ro
+    depends_on:
+      gateway:
+        condition: service_started
+    networks:
+      - security-lab
+
+networks:
+  security-lab:
+    driver: bridge
+
+volumes:
+  postgres_data:

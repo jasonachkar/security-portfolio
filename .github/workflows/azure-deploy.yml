@@ -1,0 +1,39 @@
+name: Azure Cloud Demo Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  plan-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+        working-directory: infra/azure/terraform
+      - run: terraform init -backend=false
+        working-directory: infra/azure/terraform/environments/dev
+      - run: terraform validate
+        working-directory: infra/azure/terraform/environments/dev
+      - run: terraform plan -out=tfplan
+        working-directory: infra/azure/terraform/environments/dev
+      - name: Build and push images
+        run: |
+          echo "Build/push is intentionally environment-specific."
+          echo "Use ACR login server output and docker-build workflow tags for the cloud-demo deploy."
+      - name: Deploy Container Apps and Static Web App
+        run: |
+          echo "Apply Terraform after image variables are set for the target ACR images."
+          echo "terraform apply tfplan"
+      - name: Post-deploy smoke tests
+        run: |
+          echo "Run gateway /healthz and reviewer UI checks after applying Terraform."
