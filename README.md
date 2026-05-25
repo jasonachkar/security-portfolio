@@ -161,17 +161,22 @@ Archived planned services are under `_archive/planned-services/` and are not pre
 
 ## Reviewer UI
 
-The reviewer UI is designed for a five-minute review path:
+The reviewer UI is a React + Vite single-page app with **real, deep-linkable routes** (React
+Router), structured/typed data, and reusable components — not a single-file brochure. It is
+designed for a five-minute review path:
 
-1. Start Here
-2. Architecture
-3. Secure Gateway
-4. Assessment Pipeline
-5. Network Telemetry
-6. Azure Deployment
-7. Evidence
+1. Start Here — `/`
+2. Architecture — `/architecture`
+3. Secure Gateway — `/gateway`
+4. Assessment Pipeline — `/assessment-pipeline`
+5. Network Telemetry — `/network-telemetry`
+6. Azure Deployment — `/azure-deployment`
+7. Evidence — `/evidence`
 
-Every demo dataset is labelled. Strong claims point to code, tests, docs, or evidence artifacts where practical.
+A secondary, optional Lab Sandbox (`/sandbox`) is available for hands-on API exploration. Every
+demo dataset is labelled, and every strong claim renders as a clickable `ProofLink` to the exact
+code, test, workflow, doc, or evidence file on GitHub. See `docs/reviewer-ui-redesign-report.md`
+for the redesign details.
 
 ## Evidence
 

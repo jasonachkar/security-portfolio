@@ -11,7 +11,7 @@ Built components:
 - FastAPI vulnerability scanner service with ZAP-backed local scanning, strict target allowlisting, Celery/Redis jobs, PostgreSQL persistence, demo import, and scanner safety boundaries.
 - FastAPI network analyzer with local tshark parser/capture model, seeded cloud-demo telemetry, flow/anomaly/stat endpoints, and mocked capture tests.
 - FastAPI assessment orchestrator for defensive Nmap/ZAP/Trivy artifact workflows, strict target validation, safe subprocess construction, timeouts, demo import, and artifact persistence.
-- Public React/Vite reviewer UI with pages for Start Here, Architecture, Secure Gateway, Assessment Pipeline, Network Telemetry, Azure Deployment, Evidence, and Lab Sandbox.
+- Public React/Vite reviewer UI rebuilt around real React Router routes, a reusable component library, typed data modules, and clickable `ProofLink` anchors to code/tests/docs/evidence — with deep-linkable pages for Start Here, Architecture, Secure Gateway, Assessment Pipeline, Network Telemetry, Azure Deployment, Evidence, and an optional Lab Sandbox. See `docs/reviewer-ui-redesign-report.md`.
 - Local Docker Compose lab with gateway, scanner, network analyzer, assessment orchestrator, PostgreSQL, Redis, ZAP, optional reviewer UI, and optional Traefik profile.
 - Azure cloud-demo Terraform for resource group, Log Analytics, ACR, Container Apps environment, external gateway, internal services, and Static Web App.
 - CI/CD workflows for service tests, Docker image builds, Terraform validation/deployment path, and portfolio evidence generation.
@@ -95,7 +95,7 @@ Checks with limitations:
 Passing:
 
 - Gateway: 10 tests passed.
-- Reviewer UI: build passed, no-overclaiming test passed, Playwright reviewer path passed on desktop and mobile, screenshots generated.
+- Reviewer UI: `npm run build` passed; the strengthened (negation-aware) no-overclaiming test passed; 22 route-driven Playwright tests passed across chromium and Pixel 5 (deep links, sidebar navigation + back/forward, real GitHub proof-link anchors, honest-language visibility, and no body horizontal overflow at mobile/laptop/desktop); eight screenshots generated.
 - Vulnerability scanner: 6 pytest tests passed, ruff passed.
 - Network analyzer: 4 pytest tests passed, ruff passed.
 - Assessment orchestrator: 6 pytest tests passed, ruff passed.

@@ -12,6 +12,7 @@ const HOP_BY_HOP_HEADERS = new Set([
   'upgrade',
   'host',
   'cookie',
+  'content-length',
 ]);
 
 export function isUpstreamAllowed(baseUrl: string, allowlist: string[]): boolean {
@@ -59,7 +60,7 @@ export async function proxyToService(
   const response = await fetch(buildTargetUrl(service, request.url), {
     method: request.method,
     headers,
-    body: ['GET', 'HEAD'].includes(request.method) ? undefined : JSON.stringify(request.body ?? {}),
+    body: ['GET', 'HEAD'].includes(request.method) || request.body === undefined ? undefined : JSON.stringify(request.body),
   });
 
   reply.status(response.status);
