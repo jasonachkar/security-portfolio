@@ -195,6 +195,11 @@ services:
       - api.addrs.addr.regex=true
       - -config
       - api.disablekey=true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8090/JSON/core/view/version/ >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
     networks:
       - security-lab
 

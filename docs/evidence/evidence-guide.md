@@ -4,7 +4,8 @@ This project uses evidence to support portfolio claims without implying a live p
 
 ## Generated Automatically
 
-- Reviewer UI screenshots from `apps/reviewer-ui/scripts/generate-screenshots.ts`.
+- Reviewer UI screenshots from `apps/reviewer-ui/scripts/generate-screenshots.ts`: `start-here.png`, `architecture.png`, `gateway.png`, `assessment-pipeline.png`, `network-telemetry.png`, `azure-deployment.png`, `evidence.png`, and `mobile-start-here.png`.
+- Route-driven Playwright results (chromium + Pixel 5) and the negation-aware no-overclaiming scan from `apps/reviewer-ui` (`npm run test:e2e`, `npm test`).
 - Gateway build, typecheck, and test output from CI.
 - Python service pytest and ruff output from CI on Python 3.12.
 - Docker Compose config validation for `infra/local/docker-compose.yml`.
