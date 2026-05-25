@@ -1,0 +1,8 @@
+{
+  "kind": "traffic_spike",
+  "severity": "high",
+  "src_ip": "10.10.0.15",
+  "dst_ip": "10.10.0.50",
+  "dst_port": 8080,
+  "demo": true
+}

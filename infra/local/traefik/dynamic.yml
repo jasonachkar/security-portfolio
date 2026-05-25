@@ -1,0 +1,13 @@
+http:
+  routers:
+    gateway-router:
+      rule: "PathPrefix(`/`)"
+      service: gateway
+      entryPoints:
+        - web
+
+  services:
+    gateway:
+      loadBalancer:
+        servers:
+          - url: "http://gateway:3000"

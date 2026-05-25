@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, refactor/defensive-security-platform-lab]
+
+permissions:
+  contents: read
+
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/gateway/package-lock.json
+      - run: npm ci
+        working-directory: apps/gateway
+      - run: npm run build
+        working-directory: apps/gateway
+      - run: npm run typecheck
+        working-directory: apps/gateway
+      - run: npm test
+        working-directory: apps/gateway
+      - run: npm audit --audit-level=critical
+        working-directory: apps/gateway
+
+  python-services:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - apps/vulnerability-scanner
+          - apps/network-analyzer
+          - apps/assessment-orchestrator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pip
+      - run: python -m pip install -e ".[dev]"
+        working-directory: ${{ matrix.service }}
+      - run: pytest
+        working-directory: ${{ matrix.service }}
+      - run: ruff check .
+        working-directory: ${{ matrix.service }}
+
+  reviewer-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/reviewer-ui/package-lock.json
+      - run: npm ci
+        working-directory: apps/reviewer-ui
+      - run: npm run build
+        working-directory: apps/reviewer-ui
+      - run: npm test
+        working-directory: apps/reviewer-ui
+      - run: npm audit --audit-level=critical
+        working-directory: apps/reviewer-ui
+
+  platform-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f infra/local/docker-compose.yml config
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"

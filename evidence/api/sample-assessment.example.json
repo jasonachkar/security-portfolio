@@ -1,0 +1,7 @@
+{
+  "id": 1,
+  "target": "demo-app.local",
+  "status": "completed",
+  "artifacts": ["nmap", "zap", "trivy"],
+  "demo": true
+}

@@ -1,0 +1,35 @@
+name: Docker Build
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - name: gateway
+            dockerfile: apps/gateway/Dockerfile
+          - name: vulnerability-scanner
+            dockerfile: apps/vulnerability-scanner/Dockerfile
+          - name: network-analyzer
+            dockerfile: apps/network-analyzer/Dockerfile
+          - name: assessment-orchestrator
+            dockerfile: apps/assessment-orchestrator/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.image.dockerfile }}
+          push: false
+          tags: defensive-security-platform/${{ matrix.image.name }}:${{ github.sha }}

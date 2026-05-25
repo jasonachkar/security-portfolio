@@ -1,0 +1,13 @@
+{
+  "id": 1,
+  "target_url": "http://demo-app.local",
+  "status": "completed",
+  "findings": [
+    {
+      "name": "Missing Content Security Policy",
+      "risk": "Medium",
+      "confidence": "High",
+      "demo": true
+    }
+  ]
+}
