@@ -65,7 +65,7 @@ def list_assessments(
             query = query.where(Assessment.target.ilike(f"%{target_filter}%"))
 
         # Get total count
-        total = db.scalar(select(func.count()).select_from(query.subquery()))
+        total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
 
         # Calculate pagination
         total_pages = math.ceil(total / page_size) if total > 0 else 1

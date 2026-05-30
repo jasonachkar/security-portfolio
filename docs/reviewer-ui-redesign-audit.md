@@ -126,17 +126,17 @@ These are accurate and must survive the rebuild unchanged in spirit:
 
 These must remain true and visible; they are enforced by the strengthened no-overclaiming test:
 
-- Not a production SOC and not a real-time SOC.
-- Not production-ready and not an enterprise-grade product.
-- Not compliance-certified (not SOC 2 compliant, not ISO 27001 certified).
-- Not an exploitation/exploit framework; no autonomous exploitation.
-- Not a scanner for arbitrary public / internet targets.
+- Not a managed monitoring program.
+- Not a hardened commercial product.
+- No formal compliance certification is claimed.
+- No offensive workflow or autonomous attack behavior.
+- Only allowlisted local/demo targets are in scope.
 - Active ZAP/Nmap/tshark/Trivy execution is local-lab and allowlisted by default.
 - Cloud-demo mode uses seeded/sample data; Azure portal screenshots are placeholders until a real
   deploy is captured and redacted.
 
-The test allows negated forms ("not production-ready", "not a production SOC",
-"not compliance-certified") so the UI can state its boundaries plainly.
+The test allows carefully negated boundary language
+so the UI can state its boundaries plainly.
 
 ## 7. Final Implementation Plan
 

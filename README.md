@@ -22,8 +22,8 @@ Live reviewer UI: _placeholder - Azure Static Web Apps URL_
 - Not an operations-center or managed detection program.
 - Not an enterprise SaaS product.
 - Not an exploitation framework.
-- Not a tool for scanning arbitrary public targets.
-- Not compliance-certified.
+- Only allowlisted local/demo targets are in scope.
+- No formal compliance certification is claimed.
 - Not a live operational platform.
 
 This is a defensive, production-inspired security platform lab for portfolio review and technical interviews.
@@ -133,7 +133,7 @@ Cloud-demo mode does not run arbitrary internet scanning by default.
 | Full alert correlation | Planned | Archived as future scope. |
 | Full compliance engine | Planned | Archived as future scope. |
 | Live AWS Security Hub integration | Planned | Not active in this project. |
-| Production SOC workflows | Planned | Not a goal of this lab. |
+| Managed monitoring workflows | Planned | Not a goal of this lab. |
 
 ## Active Services
 
@@ -157,7 +157,7 @@ Archived planned services are under `_archive/planned-services/` and are not pre
 - Internal services are reached through fixed upstream IDs, not user-supplied URLs.
 - Scanner execution is local-lab only unless a target is explicitly allowlisted.
 - Packet capture is opt-in and documented as local-only.
-- CI does not scan arbitrary public targets.
+- CI does not scan unmanaged public targets.
 
 ## Reviewer UI
 

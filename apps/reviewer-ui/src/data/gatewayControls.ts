@@ -124,5 +124,3 @@ export const GATEWAY_TRADEOFFS: string[] = [
   "Helmet's Content-Security-Policy is disabled for the demo and would be defined for a real deployment.",
   'The gateway throws on startup if JWT_SECRET is unset outside local mode, but secrets should live in Key Vault / Container Apps secrets, not env defaults.',
 ];
-
-export const GATEWAY_TEST_COUNT = 10;

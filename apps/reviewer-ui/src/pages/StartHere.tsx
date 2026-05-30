@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Cloud,
+  Code2,
   FileCheck2,
+  GitCommit,
   KeyRound,
   Network,
   Radar,
@@ -10,6 +12,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import { Badge } from '../components/shared/Badge';
+import { CiBadge } from '../components/shared/CiBadge';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import { ProofCard } from '../components/shared/ProofCard';
 import { MetricCard } from '../components/shared/MetricCard';
@@ -25,9 +28,14 @@ import {
   STATUS_TONE,
 } from '../data/projectFacts';
 import { CORE_LIMITATIONS } from '../data/limitations';
-import { EVIDENCE_TEST_TOTALS } from '../data/evidenceCatalog';
+import { GITHUB_STATS } from '../data/generated/githubStats';
+import { RECENT_COMMITS } from '../data/generated/recentCommits';
 
 const PILLAR_ICONS = [KeyRound, Workflow, Radar, Cloud];
+
+function formatDate(value: string | null) {
+  return value ? new Date(value).toLocaleDateString() : 'Not available';
+}
 
 export function StartHere() {
   return (
@@ -40,6 +48,7 @@ export function StartHere() {
                 {badge.label}
               </Badge>
             ))}
+            <CiBadge />
           </div>
           <h1 className="hero__title">{PROJECT_NAME}</h1>
           <p className="hero__mission">{PROJECT_MISSION}</p>
@@ -55,10 +64,32 @@ export function StartHere() {
         <aside className="hero__panel" aria-label="Platform at a glance">
           <span className="hero__panel-label">Platform at a glance</span>
           <div className="metric-grid">
-            <MetricCard value="1" label="Public ingress" hint="Gateway only" tone="teal" icon={<ShieldCheck size={16} />} />
-            <MetricCard value={EVIDENCE_TEST_TOTALS.backendTotal} label="Backend tests" hint="Gateway + 3 services" tone="green" />
-            <MetricCard value="4" label="Active services" hint="Gateway + scanner + network + assessments" tone="indigo" icon={<Network size={16} />} />
-            <MetricCard value="2" label="Deploy modes" hint="Local lab + Azure cloud-demo" tone="violet" />
+            <MetricCard
+              value={GITHUB_STATS.platform.publicIngressCount}
+              label="Public ingress"
+              hint="Terraform: gateway only"
+              tone="teal"
+              icon={<ShieldCheck size={16} />}
+            />
+            <MetricCard
+              value={GITHUB_STATS.testCounts.total}
+              label="Backend tests"
+              hint="Counted from test files"
+              tone="green"
+            />
+            <MetricCard
+              value={GITHUB_STATS.languages.length}
+              label="Languages"
+              hint={GITHUB_STATS.languages.join(' / ') || 'Not available'}
+              tone="indigo"
+              icon={<Code2 size={16} />}
+            />
+            <MetricCard
+              value={GITHUB_STATS.ciSuccessfulRuns}
+              label="CI runs passed"
+              hint={GITHUB_STATS.lastCiRunAt ? `Last: ${formatDate(GITHUB_STATS.lastCiRunAt)}` : 'No runs yet'}
+              tone="violet"
+            />
           </div>
         </aside>
       </section>
@@ -100,6 +131,32 @@ export function StartHere() {
             </Link>
           ))}
         </div>
+      </section>
+
+      <section className="surface-section">
+        <SectionHeader
+          eyebrow="GitHub activity"
+          title="Recent commits fetched at build time"
+          description={`Repository data source: ${GITHUB_STATS.dataSource}. Last push: ${formatDate(GITHUB_STATS.pushedAt)}.`}
+          icon={<GitCommit size={18} />}
+        />
+        {RECENT_COMMITS.length > 0 ? (
+          <div className="commit-feed">
+            {RECENT_COMMITS.map((commit) => (
+              <a key={commit.sha} className="commit-row" href={commit.url} target="_blank" rel="noreferrer">
+                <code className="commit-sha">{commit.sha}</code>
+                <span className="commit-message">{commit.message}</span>
+                <span className="muted">{formatDate(commit.date)}</span>
+                <ArrowRight size={14} aria-hidden />
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="link-card">
+            <span className="link-card__title">No recent commits available from the current build context.</span>
+            <span className="link-card__note">The GitHub Actions build refreshes this from the GitHub API.</span>
+          </div>
+        )}
       </section>
 
       <section className="surface-section">

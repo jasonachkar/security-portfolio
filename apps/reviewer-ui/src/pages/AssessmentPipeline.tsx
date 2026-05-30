@@ -83,8 +83,8 @@ export function AssessmentPipeline() {
           ))}
         </div>
         <LimitationCallout title="No exploitation, no arbitrary targets.">
-          Tools perform discovery and defensive scanning only, against an allowlist of local/demo targets. This is
-          not a scanner for arbitrary public targets and there is no exploitation code.
+          Tools perform discovery and defensive scanning only, against an allowlist of local/demo targets. Requests
+          outside that boundary are rejected before any tool runs.
         </LimitationCallout>
       </section>
 

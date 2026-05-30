@@ -1,7 +1,6 @@
 /**
- * Shared honest-language constants. These are deliberately phrased so the
- * no-overclaiming test passes: every boundary is stated as a negation
- * ("not a production SOC"), never as a positive overclaim.
+ * Shared honest-language constants. These boundaries avoid marketing claims
+ * and keep the lab positioned as a controlled portfolio project.
  */
 
 export interface Limitation {
@@ -11,14 +10,14 @@ export interface Limitation {
 
 export const CORE_LIMITATIONS: Limitation[] = [
   {
-    title: 'Not a production SOC',
+    title: 'Not an operations-center program',
     detail:
-      'This is a portfolio lab, not a staffed operations centre and not a real-time SOC. There is no on-call, alerting pipeline, or 24/7 monitoring.',
+      'This is a portfolio lab, not a staffed monitoring program. There is no on-call rotation, managed alerting pipeline, or 24/7 coverage.',
   },
   {
-    title: 'Not an arbitrary target scanner',
+    title: 'Allowlisted local/demo targets only',
     detail:
-      'Active scanning is restricted to an allowlist of local/demo targets. It is not a tool for scanning arbitrary public targets and performs no exploitation.',
+      'Active scanning is restricted to an allowlist of local/demo targets and performs no offensive actions.',
   },
   {
     title: 'Cloud-demo uses sample data',
@@ -43,9 +42,8 @@ export const CLAIMS_MADE: string[] = [
 
 /** Claims the project explicitly does NOT make. */
 export const CLAIMS_NOT_MADE: string[] = [
-  'It is not production-ready and not an enterprise-grade product.',
-  'It is not a production SOC and not a real-time SOC.',
-  'It is not compliance-certified (not SOC 2 compliant, not ISO 27001 certified).',
-  'It is not an exploitation framework and performs no autonomous exploitation.',
-  'It is not a scanner for arbitrary public targets.',
+  'It is a portfolio lab, not a managed operational service.',
+  'It does not claim formal compliance certification.',
+  'It does not provide offensive workflows or autonomous attack behavior.',
+  'It only scans explicitly allowlisted local/demo targets.',
 ];

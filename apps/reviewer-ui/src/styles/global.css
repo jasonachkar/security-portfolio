@@ -367,6 +367,12 @@ p {
 .badge__icon {
   display: inline-flex;
 }
+.ci-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+}
 .badge--neutral { color: var(--text-dim); background: var(--surface-3); border-color: var(--border); }
 .badge--teal { color: var(--teal); background: var(--teal-soft); border-color: rgba(68, 224, 193, 0.3); }
 .badge--indigo { color: var(--indigo); background: var(--indigo-soft); border-color: rgba(138, 160, 255, 0.3); }
@@ -521,6 +527,42 @@ p {
 .metric-card--indigo .metric-card__value { color: var(--indigo); }
 .metric-card--violet .metric-card__value { color: var(--violet); }
 .metric-card--amber .metric-card__value { color: var(--amber); }
+.metric-card--rose .metric-card__value { color: var(--rose); }
+
+/* ---------------------------------------------------------- Commit feed -- */
+
+.commit-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.commit-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+}
+.commit-row:hover {
+  text-decoration: none;
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.commit-sha {
+  color: var(--teal);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+}
+.commit-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ----------------------------------------------------------- Proof link -- */
 
@@ -1254,6 +1296,36 @@ p {
   line-height: 1.5;
 }
 
+.severity-bar {
+  display: flex;
+  min-height: 34px;
+  overflow: hidden;
+  margin: var(--sp-4) 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+.severity-bar__segment {
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  color: #05070b;
+  font-weight: 800;
+  font-size: 12px;
+}
+.severity-bar__segment--critical,
+.severity-bar__segment--high { background: var(--rose); }
+.severity-bar__segment--medium { background: var(--amber); }
+.severity-bar__segment--low { background: var(--indigo); }
+.severity-bar__segment--info { background: var(--slate); }
+.severity-bar__empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  color: var(--text-mute);
+  font-size: 13px;
+}
+
 /* ------------------------------------------------------------- Sandbox --- */
 
 .api-base-line {
@@ -1425,6 +1497,9 @@ p {
   .grid--4 { grid-template-columns: 1fr; }
   .metric-grid,
   .metric-grid--row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .commit-row { grid-template-columns: auto minmax(0, 1fr); }
+  .commit-row .muted,
+  .commit-row svg { display: none; }
   .anomaly-compare { grid-template-columns: 1fr; }
   .arch-preview__tag { width: auto; }
   .arch-preview__band { flex-direction: column; align-items: flex-start; }

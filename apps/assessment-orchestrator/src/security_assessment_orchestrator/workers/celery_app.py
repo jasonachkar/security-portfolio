@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from celery import Celery
+from celery import Celery  # type: ignore[import-untyped]
 
 from security_assessment_orchestrator.infra.settings import Settings
 

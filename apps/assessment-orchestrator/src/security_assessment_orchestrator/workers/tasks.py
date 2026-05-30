@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 
 import structlog
-from celery import shared_task
+from celery import shared_task  # type: ignore[import-untyped]
 from sqlalchemy import select, update
 
 from security_assessment_orchestrator.infra.db.models import Assessment, Artifact

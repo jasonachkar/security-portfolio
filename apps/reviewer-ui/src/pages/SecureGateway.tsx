@@ -10,11 +10,11 @@ import { LimitationCallout } from '../components/shared/LimitationCallout';
 import {
   AUTH_FLOW,
   GATEWAY_MISSION,
-  GATEWAY_TEST_COUNT,
   GATEWAY_TRADEOFFS,
   OWASP_API_TOP10,
   SECURITY_CONTROLS,
 } from '../data/gatewayControls';
+import { GITHUB_STATS } from '../data/generated/githubStats';
 
 export function SecureGateway() {
   return (
@@ -23,10 +23,10 @@ export function SecureGateway() {
         <SectionHeader eyebrow="Gateway mission" title="One enforcement point for the whole platform" icon={<ShieldCheck size={18} />} />
         <p className="prose">{GATEWAY_MISSION}</p>
         <div className="metric-grid metric-grid--row">
-          <MetricCard value={GATEWAY_TEST_COUNT} label="Gateway tests" hint="node:test, all passing" tone="green" />
-          <MetricCard value="15 min" label="Access token TTL" hint="Short-lived JWT" tone="teal" />
+          <MetricCard value={GITHUB_STATS.testCounts.gateway} label="Gateway tests" hint="Counted at build time" tone="green" />
+          <MetricCard value={`${GITHUB_STATS.gateway.accessTokenTtlMinutes} min`} label="Access token TTL" hint="Short-lived JWT" tone="teal" />
           <MetricCard value="1-use" label="Refresh tokens" hint="Rotated, reuse-detected" tone="indigo" />
-          <MetricCard value="3" label="Roles" hint="admin · analyst · auditor" tone="violet" />
+          <MetricCard value={GITHUB_STATS.gateway.roleCount} label="Roles" hint="admin / analyst / auditor" tone="violet" />
         </div>
       </section>
 
@@ -80,7 +80,7 @@ export function SecureGateway() {
       <section className="surface-section">
         <SectionHeader eyebrow="Tests & evidence" title="What backs these claims" icon={<ShieldCheck size={18} />} />
         <p className="prose">
-          The gateway has {GATEWAY_TEST_COUNT} tests covering login, refresh rotation, reuse detection with family
+          The gateway has {GITHUB_STATS.testCounts.gateway} tests covering login, refresh rotation, reuse detection with family
           revocation, RBAC denial, request validation, rate limiting, the SSRF upstream check, and audit emission.
         </p>
         <div className="proof-row">
@@ -92,7 +92,7 @@ export function SecureGateway() {
 
       <section className="surface-section">
         <SectionHeader eyebrow="Tradeoffs" title="What production hardening would add next" icon={<Wrench size={18} />} />
-        <LimitationCallout tone="info" title="This is a lab gateway, not production-ready infrastructure.">
+        <LimitationCallout tone="info" title="This is a lab gateway, not hardened multi-instance infrastructure.">
           <ul className="checklist">
             {GATEWAY_TRADEOFFS.map((item) => (
               <li key={item}>{item}</li>

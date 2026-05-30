@@ -26,7 +26,7 @@ export const TELEMETRY_MODES: TelemetryMode[] = [
   },
   {
     title: 'No production NDR claim',
-    detail: 'This is not a real-time SOC sensor. The detection logic is a single, readable traffic-spike heuristic meant to show the telemetry pipeline end to end.',
+    detail: 'This is a local telemetry lab. The detection logic is a single, readable traffic-spike heuristic meant to show the telemetry pipeline end to end.',
     tone: 'slate',
     proof: { kind: 'doc', path: 'docs/architecture/local-vs-cloud.md' },
   },

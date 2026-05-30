@@ -21,28 +21,28 @@ export interface EvidenceItem {
 /** Verified evidence — leads the page. */
 export const VERIFIED_EVIDENCE: EvidenceItem[] = [
   {
-    title: 'Gateway auth & controls (10 tests)',
+    title: 'Gateway auth & controls',
     status: 'Verified',
     proof: { kind: 'test', path: 'apps/gateway/test/gateway.test.ts' },
     proves: 'Login, refresh rotation, reuse detection + family revocation, RBAC denial, validation, rate limiting, and the SSRF upstream check.',
     limitation: 'node:test against in-memory stores; not a load or pen test.',
   },
   {
-    title: 'Scanner behavior (6 tests)',
+    title: 'Scanner behavior',
     status: 'Verified',
     proof: { kind: 'test', path: 'apps/vulnerability-scanner/tests/test_scans.py' },
     proves: 'Target allowlisting, scan lifecycle, and deterministic demo import.',
     limitation: 'ZAP is mocked in tests; live scanning runs in the local lab.',
   },
   {
-    title: 'Network telemetry (4 tests)',
+    title: 'Network telemetry',
     status: 'Verified',
     proof: { kind: 'test', path: 'apps/network-analyzer/tests/test_monitoring.py' },
     proves: 'Stats, flows, anomalies, and seeded demo telemetry endpoints.',
     limitation: 'tshark capture is mocked; real capture needs host permissions.',
   },
   {
-    title: 'Assessment orchestration (6 tests)',
+    title: 'Assessment orchestration',
     status: 'Verified',
     proof: { kind: 'test', path: 'apps/assessment-orchestrator/tests/test_assessments.py' },
     proves: 'Target validation, the artifact pipeline, and demo artifact import.',
@@ -125,13 +125,3 @@ export const AZURE_TO_CAPTURE: EvidenceItem[] = [
     limitation: 'Captured after a real cloud-demo deploy and redacted per the evidence guide.',
   },
 ];
-
-export const EVIDENCE_TEST_TOTALS = {
-  gateway: 10,
-  scanner: 6,
-  network: 4,
-  orchestrator: 6,
-  get backendTotal() {
-    return this.gateway + this.scanner + this.network + this.orchestrator;
-  },
-};
