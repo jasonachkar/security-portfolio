@@ -1,0 +1,25 @@
+services:
+  scan-engine:
+    build:
+      context: ./apps/scan-engine
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+    volumes:
+      - ./apps/scan-engine/src:/app/src
+    restart: unless-stopped
+
+  reviewer-ui:
+    build:
+      context: ./apps/reviewer-ui
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:4000
+    depends_on:
+      - scan-engine
+    restart: unless-stopped

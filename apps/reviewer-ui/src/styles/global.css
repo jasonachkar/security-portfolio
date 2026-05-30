@@ -7,6 +7,18 @@
 :root {
   color-scheme: dark;
 
+  /* ---- Interactive-lab design tokens (used by the top-nav experience) ---- */
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0f1629;
+  --bg-card: #111827;
+  --accent-cyan: #00d4ff;
+  --accent-green: #00ff88;
+  --accent-red: #ff3366;
+  --accent-yellow: #ffaa00;
+  --accent-purple: #a855f7;
+  --text-primary: #e2e8f0;
+  --text-muted: #64748b;
+
   /* Palette */
   --bg: #0a0e15;
   --bg-soft: #0e131d;
@@ -2266,6 +2278,27 @@ p {
   .arch-preview__tag { width: auto; }
   .arch-preview__band { flex-direction: column; align-items: flex-start; }
 }
+
+/* -------------------------------------------------- Interactive lab ------ */
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* React Flow overrides for the Infra Designer canvas */
+.react-flow__background { background: var(--bg-primary); }
+.react-flow__edge-path { stroke: var(--accent-cyan); stroke-width: 2; }
+.react-flow__controls { background: var(--bg-card); border: 1px solid var(--border); }
+.react-flow__controls-button {
+  background: var(--bg-card);
+  border-color: var(--border);
+  fill: var(--text-primary);
+}
+.react-flow__controls-button:hover { background: var(--bg-secondary); }
+.react-flow__minimap { background: var(--bg-card); border: 1px solid var(--border); }
+.react-flow__attribution { background: transparent; }
+.react-flow__attribution a { color: var(--text-muted); }
 
 @media (prefers-reduced-motion: reduce) {
   * {
