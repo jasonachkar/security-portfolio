@@ -1,0 +1,13 @@
+{
+    "accessToken":  "[redacted local smoke token]",
+    "expiresIn":  900,
+    "tokenType":  "Bearer",
+    "user":  {
+                 "id":  "user-admin",
+                 "username":  "admin",
+                 "role":  "admin",
+                 "permissions":  [
+                                     "*:*"
+                                 ]
+             }
+}
