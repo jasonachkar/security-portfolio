@@ -1,15 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  ComposableMap,
-  Geographies,
-  Geography,
-  Marker,
-  ZoomableGroup,
-} from 'react-simple-maps';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const GEO_URL =
-  'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
 const COUNTRY_COORDS: Record<string, [number, number]> = {
   US: [-95, 38],
@@ -69,6 +59,22 @@ interface MapMarker {
   coordinates: [number, number];
   color: string;
   label: string;
+  pulseDuration: number;
+}
+
+const REGION_BLOBS = [
+  { label: 'North America', d: 'M145 166 C180 115 255 95 324 132 C352 160 340 204 304 226 C250 257 178 237 145 198 Z' },
+  { label: 'South America', d: 'M309 296 C350 302 377 345 362 404 C349 455 313 488 289 462 C267 433 278 390 257 354 C239 323 268 292 309 296 Z' },
+  { label: 'Europe', d: 'M490 145 C529 124 579 132 594 164 C609 192 573 213 529 205 C486 197 458 168 490 145 Z' },
+  { label: 'Africa', d: 'M519 235 C575 215 621 254 620 323 C619 390 568 430 527 393 C497 365 494 303 503 262 Z' },
+  { label: 'Asia', d: 'M625 151 C724 102 853 135 875 203 C897 270 814 301 722 281 C648 266 586 205 625 151 Z' },
+  { label: 'Australia', d: 'M778 369 C821 344 878 354 894 393 C872 426 804 432 769 405 C752 392 759 380 778 369 Z' },
+];
+
+function project([longitude, latitude]: [number, number]) {
+  const x = ((longitude + 180) / 360) * 1000;
+  const y = ((90 - latitude) / 180) * 520;
+  return [Math.max(0, Math.min(1000, x)), Math.max(0, Math.min(520, y))] as const;
 }
 
 export default function ThreatMap() {
@@ -105,6 +111,7 @@ export default function ThreatMap() {
                       ? '#00ff88'
                       : '#ffaa00',
                 label: ip.ip,
+                pulseDuration: 2 + (i % 5) * 0.35,
               };
             });
           setMarkers(ipMarkers);
@@ -181,56 +188,87 @@ export default function ThreatMap() {
             </div>
           )}
 
-          <ComposableMap
-            projection="geoMercator"
-            style={{ width: '100%', height: '100%', background: 'var(--bg-primary)' }}
+          <svg
+            viewBox="0 0 1000 520"
+            role="img"
+            aria-label="Global threat activity map"
+            style={{ width: '100%', height: '100%', display: 'block', background: 'var(--bg-primary)' }}
           >
-            <ZoomableGroup zoom={1} minZoom={0.8} maxZoom={8}>
-              <Geographies geography={GEO_URL}>
-                {({ geographies }) =>
-                  geographies.map((geo) => (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      style={{
-                        default: {
-                          fill: '#111827',
-                          stroke: '#1e2d40',
-                          strokeWidth: 0.5,
-                          outline: 'none',
-                        },
-                        hover: {
-                          fill: '#1a2740',
-                          stroke: '#00d4ff',
-                          strokeWidth: 0.8,
-                          outline: 'none',
-                        },
-                        pressed: { fill: '#1a2740', outline: 'none' },
-                      }}
-                    />
-                  ))
-                }
-              </Geographies>
+            <defs>
+              <radialGradient id="threat-map-glow" cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stopColor="rgba(0, 212, 255, 0.18)" />
+                <stop offset="100%" stopColor="rgba(0, 212, 255, 0)" />
+              </radialGradient>
+              <filter id="marker-glow" x="-100%" y="-100%" width="300%" height="300%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
 
-              {markers.map((marker) => (
-                <Marker key={marker.id} coordinates={marker.coordinates}>
+            <rect width="1000" height="520" fill="#07101d" />
+            <ellipse cx="500" cy="260" rx="470" ry="220" fill="url(#threat-map-glow)" />
+
+            {Array.from({ length: 11 }).map((_, i) => (
+              <line
+                key={`lat-${i}`}
+                x1="40"
+                x2="960"
+                y1={50 + i * 42}
+                y2={50 + i * 42}
+                stroke="rgba(148, 163, 184, 0.09)"
+                strokeWidth="1"
+              />
+            ))}
+            {Array.from({ length: 13 }).map((_, i) => (
+              <line
+                key={`lon-${i}`}
+                y1="35"
+                y2="485"
+                x1={60 + i * 73}
+                x2={60 + i * 73}
+                stroke="rgba(148, 163, 184, 0.09)"
+                strokeWidth="1"
+              />
+            ))}
+
+            {REGION_BLOBS.map((region) => (
+              <path
+                key={region.label}
+                d={region.d}
+                fill="#111827"
+                stroke="#1e2d40"
+                strokeWidth="1.2"
+                opacity="0.94"
+              />
+            ))}
+
+            {markers.map((marker) => {
+              const [x, y] = project(marker.coordinates);
+              return (
+                <motion.g key={marker.id} filter="url(#marker-glow)">
                   <motion.circle
+                    cx={x}
+                    cy={y}
                     r={4}
                     fill={marker.color}
-                    fillOpacity={0.8}
+                    fillOpacity={0.86}
                     stroke={marker.color}
                     strokeWidth={1}
-                    animate={{ r: [4, 8, 4], fillOpacity: [0.8, 0.3, 0.8] }}
+                    animate={{ r: [4, 9, 4], fillOpacity: [0.86, 0.28, 0.86] }}
                     transition={{
                       repeat: Infinity,
-                      duration: 2 + Math.random() * 2,
+                      duration: marker.pulseDuration,
                       ease: 'easeInOut',
                     }}
                   />
-                </Marker>
-              ))}
-            </ZoomableGroup>
-          </ComposableMap>
+                  <circle cx={x} cy={y} r={2} fill="#ffffff" opacity="0.8" />
+                </motion.g>
+              );
+            })}
+          </svg>
         </div>
 
         {/* Right sidebar */}

@@ -8,24 +8,24 @@ import {
 } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import NavBar from '../components/NavBar';
-import Landing from '../pages/Landing';
 import Lab from '../pages/Lab';
 import ThreatMap from '../pages/ThreatMap';
-import Projects from '../pages/Projects';
-import About from '../pages/About';
+import NetworkAnalyzer from '../pages/NetworkAnalyzer';
+import VulnerabilityScanner from '../pages/VulnerabilityScanner';
+import GatewayExplorer from '../pages/GatewayExplorer';
 
 const TITLES: Record<string, string> = {
-  '/': 'Jason Achkar — Cloud Security Portfolio',
-  '/lab': 'Lab · Cloud Security Portfolio',
-  '/threat-map': 'Threat Map · Cloud Security Portfolio',
-  '/projects': 'Projects · Cloud Security Portfolio',
-  '/about': 'About · Cloud Security Portfolio',
+  '/lab': 'Infra Lab - Cloud Security Portfolio',
+  '/threat-map': 'Threat Map - Cloud Security Portfolio',
+  '/network': 'Network Analyzer - Cloud Security Portfolio',
+  '/scanner': 'Vulnerability Scanner - Cloud Security Portfolio',
+  '/gateway': 'API Gateway - Cloud Security Portfolio',
 };
 
 function TitleSync() {
   const { pathname } = useLocation();
   useEffect(() => {
-    document.title = TITLES[pathname] ?? TITLES['/'];
+    document.title = TITLES[pathname] ?? TITLES['/lab'];
   }, [pathname]);
   return null;
 }
@@ -37,12 +37,13 @@ export function App() {
       <NavBar />
       <AnimatePresence mode="wait">
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Navigate to="/lab" replace />} />
           <Route path="/lab" element={<Lab />} />
           <Route path="/threat-map" element={<ThreatMap />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/about" element={<About />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/network" element={<NetworkAnalyzer />} />
+          <Route path="/scanner" element={<VulnerabilityScanner />} />
+          <Route path="/gateway" element={<GatewayExplorer />} />
+          <Route path="*" element={<Navigate to="/lab" replace />} />
         </Routes>
       </AnimatePresence>
     </BrowserRouter>

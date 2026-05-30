@@ -1,5 +1,18 @@
 import { create } from 'zustand';
-import type { Node, Edge } from 'reactflow';
+
+export interface InfraNodeState {
+  id: string;
+  type: string;
+  label?: string;
+  position?: { x: number; y: number };
+  data?: Record<string, unknown>;
+}
+
+export interface InfraEdgeState {
+  id: string;
+  source: string;
+  target: string;
+}
 
 export interface CVE {
   id: string;
@@ -32,11 +45,11 @@ interface PortfolioStore {
   setCVEs: (cves: CVE[]) => void;
 
   // Infra designer
-  infraNodes: Node[];
-  infraEdges: Edge[];
+  infraNodes: InfraNodeState[];
+  infraEdges: InfraEdgeState[];
   infraFindings: Finding[];
-  setInfraNodes: (nodes: Node[]) => void;
-  setInfraEdges: (edges: Edge[]) => void;
+  setInfraNodes: (nodes: InfraNodeState[]) => void;
+  setInfraEdges: (edges: InfraEdgeState[]) => void;
   setInfraFindings: (findings: Finding[]) => void;
 
   // Scanner

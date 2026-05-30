@@ -1,19 +1,8 @@
 export interface InfraNode {
   id: string;
-  type:
-    | 'vpc'
-    | 'ec2'
-    | 's3'
-    | 'lambda'
-    | 'rds'
-    | 'api-gateway'
-    | 'waf'
-    | 'security-group'
-    | 'iam-role'
-    | 'cloudtrail'
-    | 'nat-gateway'
-    | 'load-balancer';
+  type: string;
   label: string;
+  cloud?: 'aws' | 'azure' | 'gcp';
   config?: Record<string, unknown>;
 }
 
@@ -55,6 +44,8 @@ export function validateInfraGraph(graph: InfraGraph): Finding[] {
   const hasWAF = graph.nodes.some((n) => n.type === 'waf');
   const hasCloudTrail = graph.nodes.some((n) => n.type === 'cloudtrail');
   const hasVPC = graph.nodes.some((n) => n.type === 'vpc');
+  const hasAzureMonitor = graph.nodes.some((n) => n.type === 'azure-monitor');
+  const hasGcpLogging = graph.nodes.some((n) => n.type === 'gcp-logging');
 
   for (const node of graph.nodes) {
     const connections = connectedTo.get(node.id) || [];
@@ -276,6 +267,213 @@ export function validateInfraGraph(graph: InfraGraph): Finding[] {
         }
         break;
       }
+
+      case 'azure-blob': {
+        const isPublic = (node.config?.public_access as boolean) ?? false;
+        const hasEncryption = (node.config?.encryption as boolean) ?? true;
+
+        if (isPublic) {
+          findings.push({
+            id: `${node.id}-public`,
+            nodeId: node.id,
+            severity: 'CRITICAL',
+            title: 'Azure Blob Public Access Enabled',
+            description: `"${node.label}" allows public blob access. This can expose object data without authentication.`,
+            remediation:
+              'Disable public blob access at the storage account and container level. Prefer private endpoints and managed identity access.',
+            framework: 'CIS Azure 3.7',
+          });
+        }
+        if (!hasEncryption) {
+          findings.push({
+            id: `${node.id}-encryption`,
+            nodeId: node.id,
+            severity: 'HIGH',
+            title: 'Azure Storage Encryption Evidence Missing',
+            description: `"${node.label}" does not include encryption evidence in the lab graph.`,
+            remediation:
+              'Document Microsoft-managed or customer-managed key encryption and require HTTPS-only transport.',
+            framework: 'CIS Azure 3.x',
+          });
+        }
+        break;
+      }
+
+      case 'azure-nsg': {
+        const allowsAll = (node.config?.allow_all_inbound as boolean) ?? false;
+        if (allowsAll) {
+          findings.push({
+            id: `${node.id}-allowall`,
+            nodeId: node.id,
+            severity: 'CRITICAL',
+            title: 'Azure NSG Allows All Inbound Traffic',
+            description: `"${node.label}" contains a broad inbound rule equivalent to any source and any destination port.`,
+            remediation:
+              'Replace broad inbound rules with least-privilege source CIDRs, destination ports, and just-in-time access for administration.',
+            framework: 'CIS Azure 6.1',
+          });
+        }
+        break;
+      }
+
+      case 'azure-vm': {
+        const sshOpen = (node.config?.ssh_open as boolean) ?? false;
+        const rdpOpen = (node.config?.rdp_open as boolean) ?? false;
+        if (sshOpen || rdpOpen) {
+          findings.push({
+            id: `${node.id}-admin-open`,
+            nodeId: node.id,
+            severity: 'CRITICAL',
+            title: 'Azure VM Administrative Port Exposed',
+            description: `"${node.label}" exposes SSH or RDP to broad internet access in the model.`,
+            remediation:
+              'Use Azure Bastion, VPN, just-in-time access, private IP administration, and restrictive NSG rules.',
+            framework: 'CIS Azure 6.2/6.3',
+          });
+        }
+        break;
+      }
+
+      case 'azure-apim': {
+        if (!connectedTypes.includes('azure-waf')) {
+          findings.push({
+            id: `${node.id}-no-waf`,
+            nodeId: node.id,
+            severity: 'HIGH',
+            title: 'Azure API Management Missing WAF Path',
+            description: `"${node.label}" is not associated with an Azure WAF node in this graph.`,
+            remediation:
+              'Place Application Gateway WAF or Front Door WAF in front of public API ingress and document managed rules.',
+            framework: 'Azure Well-Architected Security',
+          });
+        }
+        break;
+      }
+
+      case 'azure-sql': {
+        const publicNetwork = (node.config?.public_network_access as boolean) ?? false;
+        const auditEnabled = (node.config?.audit_enabled as boolean) ?? true;
+        if (publicNetwork) {
+          findings.push({
+            id: `${node.id}-public-network`,
+            nodeId: node.id,
+            severity: 'HIGH',
+            title: 'Azure SQL Public Network Access Enabled',
+            description: `"${node.label}" is reachable through public networking in the lab graph.`,
+            remediation:
+              'Disable public network access where practical, use private endpoints, and restrict firewall rules.',
+            framework: 'CIS Azure 4.x',
+          });
+        }
+        if (!auditEnabled) {
+          findings.push({
+            id: `${node.id}-audit`,
+            nodeId: node.id,
+            severity: 'MEDIUM',
+            title: 'Azure SQL Audit Evidence Missing',
+            description: `"${node.label}" does not include auditing evidence in the lab graph.`,
+            remediation: 'Enable SQL auditing and route logs to Log Analytics or a storage account.',
+            framework: 'CIS Azure 4.x',
+          });
+        }
+        break;
+      }
+
+      case 'gcp-storage': {
+        const isPublic = (node.config?.public_access as boolean) ?? false;
+        const uniformAccess = (node.config?.uniform_access as boolean) ?? true;
+        if (isPublic) {
+          findings.push({
+            id: `${node.id}-public`,
+            nodeId: node.id,
+            severity: 'CRITICAL',
+            title: 'GCS Bucket Public Access Enabled',
+            description: `"${node.label}" allows public access in the model.`,
+            remediation:
+              'Remove allUsers/allAuthenticatedUsers grants and enforce public access prevention and uniform bucket-level access.',
+            framework: 'CIS GCP 5.1',
+          });
+        }
+        if (!uniformAccess) {
+          findings.push({
+            id: `${node.id}-uniform-access`,
+            nodeId: node.id,
+            severity: 'HIGH',
+            title: 'GCS Uniform Bucket-Level Access Disabled',
+            description: `"${node.label}" does not enforce uniform bucket-level access.`,
+            remediation: 'Enable uniform bucket-level access and manage access through IAM.',
+            framework: 'CIS GCP 5.x',
+          });
+        }
+        break;
+      }
+
+      case 'gcp-firewall': {
+        const allowsAll = (node.config?.allow_all_inbound as boolean) ?? false;
+        if (allowsAll) {
+          findings.push({
+            id: `${node.id}-allowall`,
+            nodeId: node.id,
+            severity: 'CRITICAL',
+            title: 'GCP Firewall Rule Allows All Inbound Traffic',
+            description: `"${node.label}" allows broad inbound access in the model.`,
+            remediation:
+              'Restrict source ranges and destination ports. Use least-privilege firewall rules and hierarchical policies.',
+            framework: 'CIS GCP 3.6',
+          });
+        }
+        break;
+      }
+
+      case 'gcp-iam': {
+        const primitiveRole = (node.config?.primitive_role as boolean) ?? false;
+        if (primitiveRole) {
+          findings.push({
+            id: `${node.id}-primitive`,
+            nodeId: node.id,
+            severity: 'HIGH',
+            title: 'GCP Primitive IAM Role Assigned',
+            description: `"${node.label}" represents primitive Owner/Editor/Viewer-style access.`,
+            remediation:
+              'Replace primitive roles with predefined or custom least-privilege roles. Use IAM Recommender to reduce scope.',
+            framework: 'CIS GCP 1.4',
+          });
+        }
+        break;
+      }
+
+      case 'gcp-compute': {
+        const sshOpen = (node.config?.ssh_open as boolean) ?? false;
+        if (sshOpen) {
+          findings.push({
+            id: `${node.id}-ssh`,
+            nodeId: node.id,
+            severity: 'CRITICAL',
+            title: 'GCP Compute SSH Open to Internet',
+            description: `"${node.label}" exposes SSH broadly in the lab graph.`,
+            remediation:
+              'Use IAP TCP forwarding, OS Login, private IP administration, and restricted firewall source ranges.',
+            framework: 'CIS GCP 3.6',
+          });
+        }
+        break;
+      }
+
+      case 'gcp-apigee': {
+        if (!connectedTypes.includes('gcp-armor')) {
+          findings.push({
+            id: `${node.id}-no-armor`,
+            nodeId: node.id,
+            severity: 'HIGH',
+            title: 'Apigee Missing Cloud Armor Path',
+            description: `"${node.label}" is not associated with a Cloud Armor node in this graph.`,
+            remediation:
+              'Document Cloud Armor edge policy coverage for public API ingress where applicable.',
+            framework: 'Google Cloud Security Foundations',
+          });
+        }
+        break;
+      }
     }
   }
 
@@ -311,6 +509,34 @@ export function validateInfraGraph(graph: InfraGraph): Finding[] {
     });
   }
 
+  if (graph.nodes.some((n) => n.cloud === 'azure' || n.type.startsWith('azure-')) && graph.nodes.length > 2 && !hasAzureMonitor) {
+    findings.push({
+      id: 'global-no-azure-monitor',
+      nodeId: '',
+      severity: 'HIGH',
+      title: 'Azure Monitor / Log Analytics Missing',
+      description:
+        'Azure resources exist without Azure Monitor or Log Analytics evidence in the graph.',
+      remediation:
+        'Add Azure Monitor and route platform logs to Log Analytics for detection and investigation evidence.',
+      framework: 'CIS Azure 5.x',
+    });
+  }
+
+  if (graph.nodes.some((n) => n.cloud === 'gcp' || n.type.startsWith('gcp-')) && graph.nodes.length > 2 && !hasGcpLogging) {
+    findings.push({
+      id: 'global-no-gcp-logging',
+      nodeId: '',
+      severity: 'HIGH',
+      title: 'GCP Cloud Logging Missing',
+      description:
+        'GCP resources exist without Cloud Logging evidence in the graph.',
+      remediation:
+        'Add Cloud Logging sinks and retention evidence for audit and detection coverage.',
+      framework: 'CIS GCP 2.x',
+    });
+  }
+
   return findings;
 }
 
@@ -335,9 +561,11 @@ export function generateTerraform(graph: InfraGraph): string {
   ];
 
   for (const node of graph.nodes) {
+    const resourceName = node.id.replace(/[^A-Za-z0-9_]/g, '_');
+    const cloud = node.cloud ?? (node.type.startsWith('azure-') ? 'azure' : node.type.startsWith('gcp-') ? 'gcp' : 'aws');
     switch (node.type) {
       case 'vpc':
-        lines.push(`resource "aws_vpc" "${node.id}" {`);
+        lines.push(`resource "aws_vpc" "${resourceName}" {`);
         lines.push('  cidr_block           = "10.0.0.0/16"');
         lines.push('  enable_dns_hostnames = true');
         lines.push('  enable_dns_support   = true');
@@ -345,16 +573,16 @@ export function generateTerraform(graph: InfraGraph): string {
         lines.push('}', '');
         break;
       case 's3':
-        lines.push(`resource "aws_s3_bucket" "${node.id}" {`);
+        lines.push(`resource "aws_s3_bucket" "${resourceName}" {`);
         lines.push(`  bucket = "${node.label.toLowerCase().replace(/\s+/g, '-')}"`);
         lines.push(`  tags = { Name = "${node.label}" }`);
         lines.push('}', '');
-        lines.push(`resource "aws_s3_bucket_server_side_encryption_configuration" "${node.id}_enc" {`);
-        lines.push(`  bucket = aws_s3_bucket.${node.id}.id`);
+        lines.push(`resource "aws_s3_bucket_server_side_encryption_configuration" "${resourceName}_enc" {`);
+        lines.push(`  bucket = aws_s3_bucket.${resourceName}.id`);
         lines.push('  rule { apply_server_side_encryption_by_default { sse_algorithm = "AES256" } }');
         lines.push('}', '');
-        lines.push(`resource "aws_s3_bucket_public_access_block" "${node.id}_block" {`);
-        lines.push(`  bucket = aws_s3_bucket.${node.id}.id`);
+        lines.push(`resource "aws_s3_bucket_public_access_block" "${resourceName}_block" {`);
+        lines.push(`  bucket = aws_s3_bucket.${resourceName}.id`);
         lines.push('  block_public_acls       = true');
         lines.push('  block_public_policy     = true');
         lines.push('  ignore_public_acls      = true');
@@ -362,14 +590,14 @@ export function generateTerraform(graph: InfraGraph): string {
         lines.push('}', '');
         break;
       case 'ec2':
-        lines.push(`resource "aws_instance" "${node.id}" {`);
+        lines.push(`resource "aws_instance" "${resourceName}" {`);
         lines.push('  ami           = "ami-0c02fb55956c7d316"');
         lines.push('  instance_type = "t3.micro"');
         lines.push(`  tags = { Name = "${node.label}" }`);
         lines.push('}', '');
         break;
       case 'rds':
-        lines.push(`resource "aws_db_instance" "${node.id}" {`);
+        lines.push(`resource "aws_db_instance" "${resourceName}" {`);
         lines.push('  engine               = "postgres"');
         lines.push('  engine_version       = "15.4"');
         lines.push('  instance_class       = "db.t3.micro"');
@@ -385,7 +613,7 @@ export function generateTerraform(graph: InfraGraph): string {
         lines.push('}', '');
         break;
       case 'security-group':
-        lines.push(`resource "aws_security_group" "${node.id}" {`);
+        lines.push(`resource "aws_security_group" "${resourceName}" {`);
         lines.push(`  name        = "${node.label}"`);
         lines.push('  description = "Managed by Security Portfolio Lab"');
         lines.push('  egress {');
@@ -398,7 +626,7 @@ export function generateTerraform(graph: InfraGraph): string {
         lines.push('}', '');
         break;
       case 'waf':
-        lines.push(`resource "aws_wafv2_web_acl" "${node.id}" {`);
+        lines.push(`resource "aws_wafv2_web_acl" "${resourceName}" {`);
         lines.push(`  name  = "${node.label}"`);
         lines.push('  scope = "REGIONAL"');
         lines.push('  default_action { allow {} }');
@@ -408,6 +636,14 @@ export function generateTerraform(graph: InfraGraph): string {
         lines.push('    sampled_requests_enabled   = true');
         lines.push('  }');
         lines.push(`  tags = { Name = "${node.label}" }`);
+        lines.push('}', '');
+        break;
+      default:
+        lines.push(`# ${cloud.toUpperCase()} demonstration resource: ${node.label}`);
+        lines.push(`resource "portfolio_lab_${cloud}_${node.type.replace(/-/g, '_')}" "${resourceName}" {`);
+        lines.push(`  name = "${node.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}"`);
+        lines.push(`  cloud = "${cloud}"`);
+        lines.push('  evidence_required = true');
         lines.push('}', '');
         break;
     }

@@ -1,4 +1,16 @@
 services:
+  scan-engine:
+    build:
+      context: ../../apps/scan-engine
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    networks:
+      - security-lab
+
   gateway:
     build:
       context: ../..
@@ -147,6 +159,8 @@ services:
       - "5173:80"
     depends_on:
       gateway:
+        condition: service_started
+      scan-engine:
         condition: service_started
     networks:
       - security-lab
