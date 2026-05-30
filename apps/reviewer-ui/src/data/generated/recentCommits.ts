@@ -11,52 +11,59 @@ export interface RecentCommit {
 
 export const RECENT_COMMITS: RecentCommit[] = [
   {
-    "sha": "1ad36d6",
-    "message": "Merge pull request #2 from jasonachkar/refactor/defensive-security-platform-lab",
-    "author": "Jason Achkar Diab",
-    "date": "2026-05-25T02:36:47Z",
-    "url": "https://github.com/jasonachkar/security-portfolio/commit/1ad36d64880a659098e7ccef5f4effeed3abc0d6"
+    "sha": "0ad57c4",
+    "message": "chore: add redacted local smoke evidence",
+    "author": "jasonachkardiab",
+    "date": "2026-05-30T13:36:23-04:00",
+    "url": "https://github.com/jasonachkar/security-portfolio/commit/0ad57c4e026d3d6cc4e42c060d693f58bb615104"
+  },
+  {
+    "sha": "64b6f91",
+    "message": "feat: add real data evidence pipeline",
+    "author": "jasonachkardiab",
+    "date": "2026-05-30T13:30:57-04:00",
+    "url": "https://github.com/jasonachkar/security-portfolio/commit/64b6f9122e18d08920c0e79df562666024cae463"
+  },
+  {
+    "sha": "466bb39",
+    "message": "Flatten scanner/network/orchestrator services into the monorepo",
+    "author": "jasonachkar",
+    "date": "2026-05-24T22:39:45-04:00",
+    "url": "https://github.com/jasonachkar/security-portfolio/commit/466bb3987173e8953bc5bf545609418c9d9be6df"
   },
   {
     "sha": "e3d98c5",
     "message": "ui refactor",
     "author": "jasonachkar",
-    "date": "2026-05-25T02:30:49Z",
+    "date": "2026-05-24T22:30:49-04:00",
     "url": "https://github.com/jasonachkar/security-portfolio/commit/e3d98c5739d95d105fe36fbaf81bef85038c1212"
-  },
-  {
-    "sha": "ecfe87d",
-    "message": "Merge pull request #1 from jasonachkar/refactor/defensive-security-platform-lab",
-    "author": "Jason Achkar Diab",
-    "date": "2026-05-25T00:32:33Z",
-    "url": "https://github.com/jasonachkar/security-portfolio/commit/ecfe87d00a465ec798f56f2a3de0661b0bfe9e24"
   },
   {
     "sha": "9e3f5e6",
     "message": "first commit",
     "author": "jasonachkar",
-    "date": "2026-05-25T00:31:38Z",
+    "date": "2026-05-24T20:31:38-04:00",
     "url": "https://github.com/jasonachkar/security-portfolio/commit/9e3f5e641b56a66880755f0206e54ec2c4fb7a79"
   },
   {
     "sha": "f1f01e0",
     "message": "Update submodule references",
     "author": "Jason Achkar Diab",
-    "date": "2026-01-13T00:06:10Z",
+    "date": "2026-01-12T19:06:10-05:00",
     "url": "https://github.com/jasonachkar/security-portfolio/commit/f1f01e0949bb6c103a6a6d66765c779831160362"
   },
   {
     "sha": "3b8be01",
     "message": "Add submodule mappings",
     "author": "Jason Achkar Diab",
-    "date": "2026-01-13T00:04:27Z",
+    "date": "2026-01-12T19:04:27-05:00",
     "url": "https://github.com/jasonachkar/security-portfolio/commit/3b8be01281d2296e7ceb77fa2431fc67838aae93"
   },
   {
     "sha": "1599d96",
     "message": "initializing the portfolio",
     "author": "Jason Achkar Diab",
-    "date": "2026-01-11T20:35:11Z",
+    "date": "2026-01-11T15:35:11-05:00",
     "url": "https://github.com/jasonachkar/security-portfolio/commit/1599d9623b10604dfddf194b6a12393a5c9c83d9"
   }
 ];

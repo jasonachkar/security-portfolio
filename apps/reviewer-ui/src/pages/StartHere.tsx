@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
+  Activity,
   Cloud,
   Code2,
   FileCheck2,
-  GitCommit,
   KeyRound,
   Network,
   Radar,
@@ -16,20 +16,17 @@ import { CiBadge } from '../components/shared/CiBadge';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import { ProofCard } from '../components/shared/ProofCard';
 import { MetricCard } from '../components/shared/MetricCard';
-import { StatusTable } from '../components/shared/StatusTable';
 import { LimitationCallout } from '../components/shared/LimitationCallout';
+import { GitHubActivityFeed } from '../components/features/GitHubActivityFeed';
+import { CapabilityMap } from '../components/features/CapabilityMap';
 import {
-  CAPABILITY_MATRIX,
   HERO_BADGES,
   PROJECT_MISSION,
   PROJECT_NAME,
   PROOF_PILLARS,
-  REVIEWER_PATH,
-  STATUS_TONE,
 } from '../data/projectFacts';
 import { CORE_LIMITATIONS } from '../data/limitations';
 import { GITHUB_STATS } from '../data/generated/githubStats';
-import { RECENT_COMMITS } from '../data/generated/recentCommits';
 
 const PILLAR_ICONS = [KeyRound, Workflow, Radar, Cloud];
 
@@ -115,48 +112,12 @@ export function StartHere() {
 
       <section className="surface-section">
         <SectionHeader
-          eyebrow="5-minute reviewer path"
-          title="Read it in this order"
-          description="The fastest route to understanding the platform and its safety model."
-          icon={<ArrowRight size={18} />}
+          eyebrow="Repository activity"
+          title="Runtime GitHub feed"
+          description="Commits and workflow runs are fetched in the browser from the GitHub API, with build-time data as a fallback."
+          icon={<Activity size={18} />}
         />
-        <div className="grid grid--4">
-          {REVIEWER_PATH.map((step) => (
-            <Link key={step.to} to={step.to} className="path-card">
-              <span className="path-card__index">{step.index}</span>
-              <span className="path-card__label">
-                {step.label} <ArrowRight size={15} />
-              </span>
-              <span className="path-card__blurb">{step.blurb}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="surface-section">
-        <SectionHeader
-          eyebrow="GitHub activity"
-          title="Recent commits fetched at build time"
-          description={`Repository data source: ${GITHUB_STATS.dataSource}. Last push: ${formatDate(GITHUB_STATS.pushedAt)}.`}
-          icon={<GitCommit size={18} />}
-        />
-        {RECENT_COMMITS.length > 0 ? (
-          <div className="commit-feed">
-            {RECENT_COMMITS.map((commit) => (
-              <a key={commit.sha} className="commit-row" href={commit.url} target="_blank" rel="noreferrer">
-                <code className="commit-sha">{commit.sha}</code>
-                <span className="commit-message">{commit.message}</span>
-                <span className="muted">{formatDate(commit.date)}</span>
-                <ArrowRight size={14} aria-hidden />
-              </a>
-            ))}
-          </div>
-        ) : (
-          <div className="link-card">
-            <span className="link-card__title">No recent commits available from the current build context.</span>
-            <span className="link-card__note">The GitHub Actions build refreshes this from the GitHub API.</span>
-          </div>
-        )}
+        <GitHubActivityFeed />
       </section>
 
       <section className="surface-section">
@@ -210,21 +171,11 @@ export function StartHere() {
       <section className="surface-section">
         <SectionHeader
           eyebrow="Honesty first"
-          title="Real vs Demo vs Planned"
-          description="What is implemented code, what is demo data, and what is explicitly out of scope."
+          title="Interactive capability map"
+          description="Filter the system by what is implemented, local-only, cloud-demo, demo data, or planned."
           icon={<FileCheck2 size={18} />}
         />
-        <StatusTable
-          head={['Capability', 'Status', 'Notes']}
-          minWidth={680}
-          rows={CAPABILITY_MATRIX.map((row) => [
-            <span className="cell-strong">{row.capability}</span>,
-            <Badge tone={STATUS_TONE[row.status]} uppercase>
-              {row.status}
-            </Badge>,
-            row.note,
-          ])}
-        />
+        <CapabilityMap />
       </section>
 
       <section className="surface-section">

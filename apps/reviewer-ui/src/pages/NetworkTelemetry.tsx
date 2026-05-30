@@ -4,51 +4,25 @@ import { SectionHeader } from '../components/shared/SectionHeader';
 import { ProofCard } from '../components/shared/ProofCard';
 import { ProofLink } from '../components/shared/ProofLink';
 import { LimitationCallout } from '../components/shared/LimitationCallout';
+import { TrafficSparkline } from '../components/features/TrafficSparkline';
 import {
-  ANOMALY_EXAMPLE,
   ANOMALY_LOGIC,
-  BASELINE_FLOW,
   CAPTURE_CAVEATS,
   FLOW_MODEL,
   TELEMETRY_EVIDENCE,
   TELEMETRY_MISSION,
   TELEMETRY_MODES,
-  type AnomalyExample,
 } from '../data/networkTelemetry';
-
-function FlowCard({ flow, tone }: { flow: AnomalyExample; tone: 'amber' | 'green' }) {
-  const isSpike = flow.kind === 'traffic_spike';
-  return (
-    <div className={`flow-card flow-card--${tone}`}>
-      <div className="flow-card__head">
-        <span className="flow-card__route">
-          {flow.source} <span aria-hidden>→</span> {flow.destination}:{flow.port}
-        </span>
-        <Badge tone={isSpike ? 'rose' : 'slate'} uppercase>
-          {flow.severity}
-        </Badge>
-      </div>
-      <div className="flow-card__metrics">
-        <span>
-          <strong>{flow.bytes}</strong> bytes
-        </span>
-        <span>
-          <strong>{flow.packets}</strong> packets
-        </span>
-        <span>
-          <strong>tcp</strong> /{flow.port}
-        </span>
-      </div>
-      <span className="flow-card__kind">{isSpike ? 'crossed the spike threshold' : 'within normal baseline'}</span>
-    </div>
-  );
-}
 
 export function NetworkTelemetry() {
   return (
     <div className="page-stack">
       <section className="surface-section">
-        <SectionHeader eyebrow="Network telemetry" title="Packets → flows → an explainable anomaly" icon={<Radar size={18} />} />
+        <SectionHeader
+          eyebrow="Network telemetry"
+          title="Packets to flows to an explainable anomaly"
+          icon={<Radar size={18} />}
+        />
         <p className="prose">{TELEMETRY_MISSION}</p>
       </section>
 
@@ -56,7 +30,16 @@ export function NetworkTelemetry() {
         <SectionHeader eyebrow="Telemetry modes" title="Where the data comes from" icon={<Waypoints size={18} />} />
         <div className="grid grid--3">
           {TELEMETRY_MODES.map((mode) => (
-            <ProofCard key={mode.title} title={mode.title} badge={<Badge tone={mode.tone} uppercase>{mode.tone === 'amber' ? 'local' : mode.tone === 'violet' ? 'demo' : 'scope'}</Badge>} proofs={[mode.proof]}>
+            <ProofCard
+              key={mode.title}
+              title={mode.title}
+              badge={
+                <Badge tone={mode.tone} uppercase>
+                  {mode.tone === 'amber' ? 'local' : mode.tone === 'violet' ? 'demo' : 'scope'}
+                </Badge>
+              }
+              proofs={[mode.proof]}
+            >
               <p>{mode.detail}</p>
             </ProofCard>
           ))}
@@ -84,14 +67,11 @@ export function NetworkTelemetry() {
       <section className="surface-section">
         <SectionHeader
           eyebrow="Anomaly example"
-          title="A traffic spike, side by side with a baseline"
-          description="The detection is a single, readable rule — easy to explain in an interview."
+          title="Traffic pattern with an injectable spike"
+          description="The detection is a single, readable rule, shown as a moving flow pattern rather than a frozen table."
           icon={<Radar size={18} />}
         />
-        <div className="anomaly-compare">
-          <FlowCard flow={BASELINE_FLOW} tone="green" />
-          <FlowCard flow={ANOMALY_EXAMPLE} tone="amber" />
-        </div>
+        <TrafficSparkline />
         <div className="rule-grid">
           <div>
             <span className="rule-grid__label">Rule</span>

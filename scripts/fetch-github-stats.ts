@@ -139,16 +139,22 @@ function platformFacts() {
 function gatewayFacts() {
   const configPath = join(repoRoot, 'apps', 'gateway', 'src', 'config.ts');
   if (!existsSync(configPath)) {
-    return { accessTokenTtlMinutes: 15, roleCount: 3 };
+    return { accessTokenTtlMinutes: 15, roleCount: 3, rateLimitMax: 120, rateLimitWindowMs: 60_000 };
   }
   const config = readFileSync(configPath, 'utf8');
   const ttlMatch = config.match(/ACCESS_TOKEN_TTL_SECONDS',\s*(\d+)/);
+  const rateLimitMaxMatch = config.match(/RATE_LIMIT_MAX',\s*(\d+)/);
+  const rateLimitWindowMatch = config.match(/RATE_LIMIT_WINDOW_MS',\s*([\d_]+)/);
   const roleUnionMatch = config.match(/export type Role = ([^;]+);/);
   const ttlSeconds = ttlMatch ? Number.parseInt(ttlMatch[1], 10) : 900;
+  const rateLimitMax = rateLimitMaxMatch ? Number.parseInt(rateLimitMaxMatch[1], 10) : 120;
+  const rateLimitWindowMs = rateLimitWindowMatch ? Number.parseInt(rateLimitWindowMatch[1].replaceAll('_', ''), 10) : 60_000;
   const roleCount = roleUnionMatch ? Array.from(roleUnionMatch[1].matchAll(/'[^']+'/g)).length : 3;
   return {
     accessTokenTtlMinutes: Math.round(ttlSeconds / 60),
     roleCount,
+    rateLimitMax,
+    rateLimitWindowMs,
   };
 }
 

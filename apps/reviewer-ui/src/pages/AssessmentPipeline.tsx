@@ -1,11 +1,10 @@
 import { Boxes, Crosshair, FileSearch, ShieldCheck, Workflow } from 'lucide-react';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import { ProofCard } from '../components/shared/ProofCard';
-import { Timeline } from '../components/shared/Timeline';
 import { ProofLink } from '../components/shared/ProofLink';
 import { LimitationCallout } from '../components/shared/LimitationCallout';
+import { PipelineTrace } from '../components/features/PipelineTrace';
 import {
-  ASSESSMENT_LIFECYCLE,
   ORCHESTRATOR_STORY,
   PIPELINE_EVIDENCE,
   PIPELINE_GUARDRAILS,
@@ -24,11 +23,11 @@ export function AssessmentPipeline() {
       <section className="surface-section">
         <SectionHeader
           eyebrow="Lifecycle"
-          title="Request → allowlist → queue → run → persist → review"
-          description="The allowlist check happens before any tool starts — nothing runs against a target that is not explicitly permitted."
+          title="Run the defensive assessment trace"
+          description="The visual trace mirrors the allowlist-first flow: validate target, discover services, scan, optionally inspect images, and persist artifacts."
           icon={<Boxes size={18} />}
         />
-        <Timeline steps={ASSESSMENT_LIFECYCLE} variant="horizontal" />
+        <PipelineTrace />
       </section>
 
       <section className="surface-section">

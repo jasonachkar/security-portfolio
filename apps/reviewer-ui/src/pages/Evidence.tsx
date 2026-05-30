@@ -1,11 +1,9 @@
 import { Camera, CheckCircle2, FileCheck2, FileJson, Radar, XCircle } from 'lucide-react';
-import type { BadgeTone } from '../components/shared/Badge';
-import { Badge } from '../components/shared/Badge';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import { EvidenceCard } from '../components/shared/EvidenceCard';
 import { MetricCard } from '../components/shared/MetricCard';
 import { ProofLink } from '../components/shared/ProofLink';
-import { StatusTable } from '../components/shared/StatusTable';
+import { ScanDashboard } from '../components/features/ScanDashboard';
 import {
   API_SAMPLES,
   AZURE_TO_CAPTURE,
@@ -15,25 +13,6 @@ import {
 import { CLAIMS_MADE, CLAIMS_NOT_MADE } from '../data/limitations';
 import { GITHUB_STATS } from '../data/generated/githubStats';
 import { SCAN_SUMMARY } from '../data/generated/scanSummary';
-
-const SEVERITY_TONE: Record<string, BadgeTone> = {
-  critical: 'rose',
-  high: 'rose',
-  medium: 'amber',
-  low: 'indigo',
-  info: 'slate',
-};
-
-function shortFile(path?: string) {
-  if (!path) {
-    return '-';
-  }
-  return path.split(/[\\/]/).slice(-2).join('/');
-}
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString();
-}
 
 export function Evidence() {
   return (
@@ -57,51 +36,11 @@ export function Evidence() {
       <section className="surface-section">
         <SectionHeader
           eyebrow="Self-scan results"
-          title="Real findings from scanning this repo"
-          description={`${SCAN_SUMMARY.totalFindings} findings across ${Object.keys(SCAN_SUMMARY.byTool).length} tools. Last scan summary: ${formatDate(SCAN_SUMMARY.generatedAt)}.`}
+          title="Visual findings dashboard"
+          description={`${SCAN_SUMMARY.totalFindings} findings across ${Object.keys(SCAN_SUMMARY.byTool).length} tools, generated from committed scanner evidence.`}
           icon={<Radar size={18} />}
         />
-        <div className="metric-grid metric-grid--row">
-          <MetricCard value={SCAN_SUMMARY.totalFindings} label="Total findings" tone="teal" />
-          <MetricCard value={Object.keys(SCAN_SUMMARY.byTool).length} label="Tools reporting" tone="indigo" />
-          <MetricCard value={SCAN_SUMMARY.bySeverity.critical} label="Critical" tone="rose" />
-          <MetricCard value={SCAN_SUMMARY.bySeverity.high} label="High" tone="amber" />
-          <MetricCard value={SCAN_SUMMARY.bySeverity.medium} label="Medium" tone="violet" />
-        </div>
-        <div className="severity-bar" aria-label="Finding severity breakdown">
-          {Object.entries(SCAN_SUMMARY.bySeverity).some(([, count]) => count > 0) ? (
-            Object.entries(SCAN_SUMMARY.bySeverity).map(([severity, count]) =>
-              count > 0 ? (
-                <div
-                  key={severity}
-                  className={`severity-bar__segment severity-bar__segment--${severity}`}
-                  style={{ flex: count }}
-                  title={`${severity}: ${count}`}
-                >
-                  <span>{count}</span>
-                </div>
-              ) : null,
-            )
-          ) : (
-            <div className="severity-bar__empty">No findings in the committed scan summary.</div>
-          )}
-        </div>
-        <StatusTable
-          head={['Tool', 'Severity', 'Finding', 'File']}
-          minWidth={760}
-          rows={
-            SCAN_SUMMARY.topFindings.length > 0
-              ? SCAN_SUMMARY.topFindings.map((finding) => [
-                  <Badge tone="neutral">{finding.tool}</Badge>,
-                  <Badge tone={SEVERITY_TONE[finding.severity] ?? 'slate'} uppercase>
-                    {finding.severity}
-                  </Badge>,
-                  <span className="cell-strong">{finding.title}</span>,
-                  <span className="muted">{shortFile(finding.file)}</span>,
-                ])
-              : [[<Badge tone="slate">none</Badge>, <Badge tone="slate">none</Badge>, 'No current findings', 'evidence/scans']]
-          }
-        />
+        <ScanDashboard />
       </section>
 
       <section className="surface-section">

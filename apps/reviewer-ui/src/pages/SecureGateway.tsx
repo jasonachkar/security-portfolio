@@ -2,13 +2,13 @@ import { KeyRound, ListChecks, LockKeyhole, ShieldCheck, Wrench } from 'lucide-r
 import { Badge } from '../components/shared/Badge';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import { ProofCard } from '../components/shared/ProofCard';
-import { Timeline } from '../components/shared/Timeline';
 import { StatusTable } from '../components/shared/StatusTable';
 import { MetricCard } from '../components/shared/MetricCard';
 import { ProofLink } from '../components/shared/ProofLink';
 import { LimitationCallout } from '../components/shared/LimitationCallout';
+import { AuthFlowVisualizer } from '../components/features/AuthFlowVisualizer';
+import { RateLimiterSim } from '../components/features/RateLimiterSim';
 import {
-  AUTH_FLOW,
   GATEWAY_MISSION,
   GATEWAY_TRADEOFFS,
   OWASP_API_TOP10,
@@ -33,11 +33,21 @@ export function SecureGateway() {
       <section className="surface-section">
         <SectionHeader
           eyebrow="Authentication flow"
-          title="Login → rotation → reuse detection → logout"
+          title="Login, rotation, reuse detection, logout"
           description="A rotating refresh-token family. Replaying a spent token revokes the family and logs an audit event."
           icon={<KeyRound size={18} />}
         />
-        <Timeline steps={AUTH_FLOW} variant="horizontal" />
+        <AuthFlowVisualizer />
+      </section>
+
+      <section className="surface-section">
+        <SectionHeader
+          eyebrow="Rate limiting"
+          title="Click through the 429 path"
+          description="The simulator displays the actual gateway policy and compresses the request count so the rejection path is visible in seconds."
+          icon={<LockKeyhole size={18} />}
+        />
+        <RateLimiterSim />
       </section>
 
       <section className="surface-section">
