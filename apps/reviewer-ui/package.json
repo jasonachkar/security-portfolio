@@ -24,7 +24,6 @@
     "react-router-dom": "^7.15.1",
     "react-simple-maps": "^3.0.0",
     "reactflow": "^11.11.4",
-    "recharts": "^3.8.1",
     "vite": "^6.4.2",
     "zustand": "^5.0.14"
   },
