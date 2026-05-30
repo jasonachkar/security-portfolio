@@ -66,14 +66,14 @@ export default function Landing() {
       '> Scan engine: online ✓',
       '> Platform ready. Welcome.',
     ];
-    let i = 0;
     const interval = setInterval(() => {
-      if (i < lines.length) {
-        setTerminalLines((prev) => [...prev, lines[i]]);
-        i++;
-      } else {
-        clearInterval(interval);
-      }
+      setTerminalLines((prev) => {
+        if (prev.length >= lines.length) {
+          clearInterval(interval);
+          return prev;
+        }
+        return [...prev, lines[prev.length]];
+      });
     }, 400);
     return () => clearInterval(interval);
   }, []);
@@ -229,9 +229,9 @@ export default function Landing() {
                 transition={{ duration: 0.3 }}
                 style={{
                   fontSize: '0.82rem',
-                  color: line.includes('✓')
+                  color: (line ?? '').includes('✓')
                     ? 'var(--accent-green)'
-                    : line.includes('ready')
+                    : (line ?? '').includes('ready')
                       ? 'var(--accent-cyan)'
                       : 'var(--text-muted)',
                   marginBottom: '0.25rem',
