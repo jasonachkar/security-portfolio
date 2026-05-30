@@ -1,0 +1,21 @@
+title = "security-portfolio gitleaks config"
+
+# Start from gitleaks' built-in ruleset, then allowlist the intentional,
+# insecure-by-design demo content used to showcase scanner findings.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Intentional sample/insecure-by-design content (not real secrets)"
+paths = [
+  '''apps/reviewer-ui/src/components/lab/ScannerPlayground\.tsx''',
+  '''apps/scan-engine/src/services/scannerService\.ts''',
+  '''apps/scan-engine/src/services/infraValidator\.ts''',
+  '''_archive/.*''',
+]
+# The deliberately-bad Terraform sample hardcodes a password so Checkov/our
+# validator can flag it; it is not a live credential.
+regexes = [
+  '''password123''',
+  '''password\s*=\s*"REPLACE_WITH_SECRET"''',
+]
