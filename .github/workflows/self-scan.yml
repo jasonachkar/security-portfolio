@@ -1,0 +1,129 @@
+name: Self-Scan Evidence
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: write
+  security-events: write
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Semgrep
+        run: |
+          mkdir -p evidence/scans
+          semgrep scan \
+            --config p/typescript \
+            --config p/nodejs \
+            --config p/security-audit \
+            --json \
+            --output evidence/scans/semgrep.json \
+            apps/gateway/src apps/reviewer-ui/src || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-results
+          path: evidence/scans/semgrep.json
+          if-no-files-found: warn
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prepare evidence directory
+        run: mkdir -p evidence/scans
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_SUMMARY: "true"
+        with:
+          args: detect --source . --report-format json --report-path evidence/scans/gitleaks.json --exit-code 0 --redact=100
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-results
+          path: evidence/scans/gitleaks.json
+          if-no-files-found: warn
+
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare evidence directory
+        run: mkdir -p evidence/scans
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: evidence/scans/trivy-fs.json
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: "0"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: evidence/scans/trivy-fs.json
+          if-no-files-found: warn
+
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Bandit
+        run: |
+          mkdir -p evidence/scans
+          python -m pip install --upgrade pip
+          pip install "bandit[toml]"
+          bandit -r apps \
+            --exclude apps/reviewer-ui \
+            -f json \
+            -o evidence/scans/bandit.json \
+            --exit-zero
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bandit-results
+          path: evidence/scans/bandit.json
+          if-no-files-found: warn
+
+  commit-evidence:
+    needs: [semgrep, gitleaks, trivy, bandit]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: evidence/scans
+          merge-multiple: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/reviewer-ui/package-lock.json
+      - run: npm ci
+        working-directory: apps/reviewer-ui
+      - name: Generate scan summary modules
+        run: npx tsx ../../scripts/summarize-scans.ts
+        working-directory: apps/reviewer-ui
+      - name: Commit refreshed evidence
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(evidence): refresh self-scan results [skip ci]"
+          commit_user_name: jasonachkardiab
+          commit_user_email: jasonachkardiab@gmail.com
+          commit_author: jasonachkardiab <jasonachkardiab@gmail.com>
+          file_pattern: "evidence/scans/*.json evidence/scans/*.ts apps/reviewer-ui/src/data/generated/scanSummary.ts"

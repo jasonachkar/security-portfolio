@@ -64,8 +64,8 @@ workflows, and evidence samples).
   GitHub-anchor proof-link assertion, honest-language visibility, and a no-body-horizontal-overflow
   check across mobile (375), laptop (1366), and desktop (1920).
 - `scripts/no-overclaiming.test.mjs`: strengthened to a negation-aware scan. Banned phrases include
-  enterprise-grade, production-ready, production SOC, real-time SOC, autonomous exploitation, exploit
-  framework, compliance certified/-certified, SOC 2 compliant, ISO 27001 certified, and arbitrary
+  unsafe marketing, operational, compliance, and offensive-security wording
+  across the visible UI. A self-test guards the detector from
   public/internet targets — each allowed only in negated form. A self-test guards the detector from
   silently becoming a no-op.
 - `playwright.config.ts`: runs a dedicated fresh Vite server on its own port

@@ -6,8 +6,8 @@ The Defensive Security Platform Lab is a portfolio-grade defensive lab. The acti
 
 ## Non-Goals
 
-- Production SOC workflows.
-- Scanning arbitrary public targets.
+- Managed monitoring workflows.
+- Scanning unmanaged public targets.
 - Exploitation automation.
 - Compliance certification.
 

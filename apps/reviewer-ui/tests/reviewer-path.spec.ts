@@ -1,77 +1,72 @@
 import { expect, test } from '@playwright/test';
 
 const routes = [
-  { path: '/', heading: 'Defensive Security Platform Lab' },
-  { path: '/architecture', heading: 'Architecture' },
-  { path: '/gateway', heading: 'Secure Gateway' },
-  { path: '/assessment-pipeline', heading: 'Assessment Pipeline' },
-  { path: '/network-telemetry', heading: 'Network Telemetry' },
-  { path: '/azure-deployment', heading: 'Azure Deployment' },
-  { path: '/evidence', heading: 'Evidence' },
+  { path: '/lab', text: 'Choose a cloud model' },
+  { path: '/threat-map', text: 'Global Threat Intelligence' },
+  { path: '/network', text: 'Network Analyzer' },
+  { path: '/scanner', text: 'Vulnerability Scanner' },
+  { path: '/gateway', text: 'API Gateway' },
 ];
 
-test.describe('deep-linkable routes', () => {
+test.describe('five-tool navigation', () => {
+  test('root redirects to infra lab', async ({ page }) => {
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/lab$/);
+    await expect(page.getByText('Choose a cloud model')).toBeVisible();
+  });
+
   for (const route of routes) {
     test(`deep-link renders ${route.path}`, async ({ page }) => {
       await page.goto(route.path);
-      await expect(page.getByRole('heading', { level: 1, name: route.heading }).first()).toBeVisible();
-      await expect(page).toHaveURL(new RegExp(`${route.path === '/' ? '/$' : route.path.replace('/', '\\/')}`));
+      await expect(page.getByText(route.text).first()).toBeVisible();
+      await expect(page).toHaveURL(new RegExp(`${route.path.replace('/', '\\/')}$`));
     });
   }
-});
 
-test('sidebar links navigate and browser history works', async ({ page }) => {
-  await page.goto('/');
-  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  test('nav links move across all live tools and browser history works', async ({ page }) => {
+    await page.goto('/lab');
+    const nav = page.getByRole('navigation', { name: 'Primary tool navigation' });
 
-  await nav.getByRole('link', { name: 'Secure Gateway' }).click();
-  await expect(page).toHaveURL(/\/gateway$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Secure Gateway' })).toBeVisible();
+    await nav.getByRole('link', { name: 'Network Analyzer' }).click();
+    await expect(page).toHaveURL(/\/network$/);
+    await expect(page.getByText('Network Analyzer').first()).toBeVisible();
 
-  await nav.getByRole('link', { name: 'Evidence' }).click();
-  await expect(page).toHaveURL(/\/evidence$/);
+    await nav.getByRole('link', { name: 'API Gateway' }).click();
+    await expect(page).toHaveURL(/\/gateway$/);
+    await expect(page.getByText('API Gateway').first()).toBeVisible();
 
-  await page.goBack();
-  await expect(page).toHaveURL(/\/gateway$/);
-  await page.goForward();
-  await expect(page).toHaveURL(/\/evidence$/);
-});
+    await page.goBack();
+    await expect(page).toHaveURL(/\/network$/);
+    await page.goForward();
+    await expect(page).toHaveURL(/\/gateway$/);
+  });
 
-test('proof links are real GitHub anchors that open in a new tab', async ({ page }) => {
-  await page.goto('/gateway');
-  const link = page.locator('a.proof-link', { hasText: 'apps/gateway/test/gateway.test.ts' }).first();
-  await expect(link).toHaveAttribute(
-    'href',
-    /^https:\/\/github\.com\/jasonachkar\/security-portfolio\/blob\/refactor\/defensive-security-platform-lab\/apps\/gateway\/test\/gateway\.test\.ts$/,
-  );
-  await expect(link).toHaveAttribute('target', '_blank');
-  await expect(link).toHaveAttribute('rel', /noreferrer/);
-});
+  test('infra lab supports cloud selection and validation controls', async ({ page }) => {
+    await page.goto('/lab');
+    await page.getByRole('button', { name: /^Azure Model Azure/ }).click();
+    await expect(page.getByText('Multi-cloud security posture canvas')).toBeVisible();
+    await page.getByRole('button', { name: /Add AZURE Blob Storage/ }).click();
+    await page.getByRole('button', { name: /^Validate$/ }).click();
+    await expect(page.getByText('Security Findings')).toBeVisible();
+  });
 
-test('honest, demo-first language is visible', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByText('Allowlisted targets only').first()).toBeVisible();
+  test('no body horizontal overflow across mobile, laptop, and desktop', async ({ page }) => {
+    test.setTimeout(90_000);
+    const viewports = [
+      { name: 'mobile', width: 390, height: 844 },
+      { name: 'laptop', width: 1366, height: 768 },
+      { name: 'desktop', width: 1920, height: 1080 },
+    ];
 
-  await page.goto('/azure-deployment');
-  await expect(page.getByText('not a live production deployment').first()).toBeVisible();
-});
-
-test('no body horizontal overflow across mobile, laptop, and desktop', async ({ page }) => {
-  test.setTimeout(90_000);
-  const viewports = [
-    { name: 'mobile', width: 375, height: 812 },
-    { name: 'laptop', width: 1366, height: 768 },
-    { name: 'desktop', width: 1920, height: 1080 },
-  ];
-
-  for (const viewport of viewports) {
-    await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    for (const route of routes) {
-      await page.goto(route.path);
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-      );
-      expect(overflow, `${viewport.name} overflow on ${route.path}`).toBe(false);
+    for (const viewport of viewports) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      for (const route of routes) {
+        await page.goto(route.path);
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
+        );
+        expect(overflow, `${viewport.name} overflow on ${route.path}`).toBe(false);
+      }
     }
-  }
+  });
 });

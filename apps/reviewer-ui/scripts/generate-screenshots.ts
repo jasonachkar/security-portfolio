@@ -1,18 +1,15 @@
-import { mkdir } from 'node:fs/promises';
+﻿import { mkdir } from 'node:fs/promises';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createServer, type AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
-/** Route → screenshot filename. Routes are real URLs, so we deep-link directly. */
 const pages = [
-  ['/', 'start-here.png'],
-  ['/architecture', 'architecture.png'],
-  ['/gateway', 'gateway.png'],
-  ['/assessment-pipeline', 'assessment-pipeline.png'],
-  ['/network-telemetry', 'network-telemetry.png'],
-  ['/azure-deployment', 'azure-deployment.png'],
-  ['/evidence', 'evidence.png'],
+  ['/lab', 'infra-lab.png'],
+  ['/threat-map', 'threat-map.png'],
+  ['/network', 'network-analyzer.png'],
+  ['/scanner', 'vulnerability-scanner.png'],
+  ['/gateway', 'api-gateway.png'],
 ] as const;
 
 const providedBaseUrl = process.env.REVIEWER_UI_URL;
@@ -37,12 +34,11 @@ const waitForServer = async (url: string, timeoutMs = 30_000) => {
   while (Date.now() < deadline) {
     try {
       const response = await fetch(url);
-      if (response.ok) {
-        return;
-      }
+      if (response.ok) return;
     } catch {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Server not up yet; retry.
     }
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error(`Timed out waiting for reviewer UI at ${url}. Run npm run build before generating screenshots.`);
 };
@@ -62,20 +58,28 @@ try {
   await waitForServer(baseUrl);
   const browser = await chromium.launch();
 
-  // Desktop captures, one per route.
   const desktop = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
   for (const [route, file] of pages) {
-    await desktop.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
-    await desktop.waitForSelector('.surface-section, .hero', { state: 'visible' });
+    await desktop.goto(baseUrl, { waitUntil: 'networkidle' });
+    await desktop.evaluate((nextRoute) => {
+      window.history.pushState({}, '', nextRoute);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }, route);
+    await desktop.waitForSelector('body', { state: 'visible' });
+    await desktop.waitForTimeout(900);
     await desktop.screenshot({ path: out(file), fullPage: true });
   }
   await desktop.close();
 
-  // Mobile capture of the Start Here page.
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
-  await mobile.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
-  await mobile.waitForSelector('.hero', { state: 'visible' });
-  await mobile.screenshot({ path: out('mobile-start-here.png'), fullPage: true });
+  await mobile.goto(baseUrl, { waitUntil: 'networkidle' });
+  await mobile.evaluate(() => {
+    window.history.pushState({}, '', '/lab');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await mobile.waitForSelector('body', { state: 'visible' });
+  await mobile.waitForTimeout(900);
+  await mobile.screenshot({ path: out('mobile-infra-lab.png'), fullPage: true });
   await mobile.close();
 
   await browser.close();

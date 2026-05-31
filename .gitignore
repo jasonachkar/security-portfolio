@@ -17,3 +17,6 @@ evidence/screenshots/*.png
 .terraform/
 .terraform-tmp/
 *.tfplan
+
+# Regenerated legacy data (produced by reviewer-ui predev generate:data)
+apps/reviewer-ui/src/data/generated/

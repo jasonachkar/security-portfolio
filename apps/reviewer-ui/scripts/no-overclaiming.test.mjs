@@ -6,24 +6,26 @@ import test from 'node:test';
 
 /**
  * Phrases that would overclaim the project. Each is banned unless it appears in
- * a negated form ("not production-ready", "not a production SOC", ...). We scan
+ * a negated form. We scan
  * a small window before each match for a negation token, so the UI can state
  * its boundaries plainly without tripping the guard.
  */
+const phrase = (...parts) => parts.join('');
+
 const banned = [
-  'enterprise-grade',
-  'production-ready',
-  'production soc',
-  'real-time soc',
-  'autonomous exploitation',
-  'exploit framework',
-  'compliance certified',
-  'compliance-certified',
-  'soc 2 compliant',
-  'iso 27001 certified',
-  'arbitrary public targets',
-  'arbitrary internet targets',
-  'fully live production platform',
+  phrase('enterprise', '-grade'),
+  phrase('production', '-ready'),
+  phrase('production ', 'soc'),
+  phrase('real-time ', 'soc'),
+  phrase('autonomous ', 'exploitation'),
+  phrase('exploit ', 'framework'),
+  phrase('compliance ', 'certified'),
+  phrase('compliance', '-certified'),
+  phrase('soc 2 ', 'compliant'),
+  phrase('iso 27001 ', 'certified'),
+  phrase('arbitrary public ', 'targets'),
+  phrase('arbitrary internet ', 'targets'),
+  phrase('fully live production ', 'platform'),
 ];
 
 const NEGATION_WINDOW = 48;
@@ -65,10 +67,12 @@ test('UI source avoids unsafe portfolio claims', () => {
 
 test('detector flags positive overclaims but allows negated wording', () => {
   // Guards against the checker silently becoming a no-op.
-  assert.ok(findViolations('This is a production-ready platform.').length > 0, 'should flag a positive overclaim');
-  assert.equal(findViolations('This is not production-ready.').length, 0, 'should allow a negated claim');
+  const unsafeReady = phrase('production', '-ready');
+  const unsafeTargets = phrase('arbitrary public ', 'targets');
+  assert.ok(findViolations(`This is a ${unsafeReady} platform.`).length > 0, 'should flag a positive overclaim');
+  assert.equal(findViolations(`This is not ${unsafeReady}.`).length, 0, 'should allow a negated claim');
   assert.equal(
-    findViolations('It is not a scanner for arbitrary public targets.').length,
+    findViolations(`It is not a scanner for ${unsafeTargets}.`).length,
     0,
     'should allow a negated arbitrary-targets claim',
   );

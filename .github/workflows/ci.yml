@@ -63,6 +63,8 @@ jobs:
       - run: npm ci
         working-directory: apps/reviewer-ui
       - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: apps/reviewer-ui
       - run: npm test
         working-directory: apps/reviewer-ui

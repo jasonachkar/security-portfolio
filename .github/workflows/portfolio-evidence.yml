@@ -20,15 +20,14 @@ jobs:
       - run: npm ci
         working-directory: apps/reviewer-ui
       - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: apps/reviewer-ui
       - run: npx playwright install --with-deps chromium
         working-directory: apps/reviewer-ui
       - run: npm run test:e2e
         working-directory: apps/reviewer-ui
-      - run: |
-          npm run dev -- --host 127.0.0.1 &
-          sleep 8
-          npm run evidence:screenshots
+      - run: npm run evidence:screenshots
         working-directory: apps/reviewer-ui
       - uses: actions/upload-artifact@v4
         with:

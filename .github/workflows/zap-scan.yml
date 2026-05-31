@@ -1,0 +1,56 @@
+name: ZAP Baseline Evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/reviewer-ui/package-lock.json
+      - name: Build reviewer UI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm ci
+          npm run build
+        working-directory: apps/reviewer-ui
+      - name: Serve reviewer UI
+        run: npx --yes serve apps/reviewer-ui/dist -l 3001 &
+      - name: Wait for local UI
+        run: |
+          for i in {1..30}; do
+            curl -fsS http://localhost:3001 >/dev/null && exit 0
+            sleep 2
+          done
+          exit 1
+      - name: Prepare evidence directory
+        run: mkdir -p evidence/scans
+      - name: Run ZAP baseline against reviewer UI
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: http://localhost:3001
+          fail_action: false
+          artifact_name: zap-baseline-report
+          cmd_options: "-J evidence/scans/zap-reviewer-ui.json"
+      - name: Generate scan summary modules
+        run: npx tsx ../../scripts/summarize-scans.ts
+        working-directory: apps/reviewer-ui
+      - name: Commit ZAP evidence
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(evidence): add ZAP baseline scan of reviewer UI [skip ci]"
+          commit_user_name: jasonachkardiab
+          commit_user_email: jasonachkardiab@gmail.com
+          commit_author: jasonachkardiab <jasonachkardiab@gmail.com>
+          file_pattern: "evidence/scans/zap-reviewer-ui.json evidence/scans/*.json evidence/scans/*.ts apps/reviewer-ui/src/data/generated/scanSummary.ts"

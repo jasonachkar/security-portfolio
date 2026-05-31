@@ -1,0 +1,22 @@
+{
+    "services":  [
+                     {
+                         "id":  "scanner",
+                         "label":  "Vulnerability Scanner",
+                         "gatewayPrefix":  "/api/scans",
+                         "targetPrefix":  "/scans"
+                     },
+                     {
+                         "id":  "network",
+                         "label":  "Network Analyzer",
+                         "gatewayPrefix":  "/api/network",
+                         "targetPrefix":  "/monitoring"
+                     },
+                     {
+                         "id":  "assessments",
+                         "label":  "Assessment Orchestrator",
+                         "gatewayPrefix":  "/api/assessments",
+                         "targetPrefix":  "/assessments"
+                     }
+                 ]
+}

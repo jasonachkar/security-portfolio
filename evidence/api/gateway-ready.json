@@ -1,0 +1,17 @@
+{
+    "status":  "ok",
+    "services":  [
+                     {
+                         "id":  "scanner",
+                         "allowlisted":  true
+                     },
+                     {
+                         "id":  "network",
+                         "allowlisted":  true
+                     },
+                     {
+                         "id":  "assessments",
+                         "allowlisted":  true
+                     }
+                 ]
+}
