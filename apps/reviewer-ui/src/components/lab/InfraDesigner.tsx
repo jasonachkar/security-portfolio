@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Download, Link2, Play, RotateCcw, Trash2 } from 'lucide-react';
 import { usePortfolioStore, type Finding } from '../../store/usePortfolioStore';
 import FindingsPanel from './FindingsPanel';
+import InfraIconNode from './InfraIconNode';
 
 export type CloudMode = 'aws' | 'azure' | 'gcp' | 'multi';
 type CloudProvider = Exclude<CloudMode, 'multi'>;
@@ -581,34 +582,15 @@ export default function InfraDesigner({
                 zIndex: selected ? 12 : 8,
               }}
             >
-              <div style={{ color, fontSize: '0.7rem', fontWeight: 900, marginBottom: '0.2rem' }}>
-                {short}
-              </div>
-              <div style={{ fontSize: '0.74rem', fontWeight: 800 }}>{node.label}</div>
-              <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.14rem' }}>
-                {node.type}
-              </div>
-              {(node.findingCount ?? 0) > 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: -8,
-                    right: -8,
-                    background: node.borderColor ?? '#ff3366',
-                    color: '#fff',
-                    borderRadius: '50%',
-                    width: 21,
-                    height: 21,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.65rem',
-                    fontWeight: 900,
-                  }}
-                >
-                  {node.findingCount}
-                </span>
-              )}
+              <InfraIconNode
+                label={node.label}
+                nodeType={node.type}
+                cloud={node.cloud}
+                color={color}
+                short={short}
+                selected={selected}
+                findingCount={node.findingCount}
+              />
             </motion.button>
           );
         })}

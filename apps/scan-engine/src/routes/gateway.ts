@@ -183,6 +183,137 @@ router.post('/attack', (req: Request, res: Response) => {
       return res.json({ attackType: 'PRIVILEGE_ESCALATION', attempts: results.length, results, mitigations: ['Role-based access control', 'Permission checks per action', 'Audit logging of authorization denials'] });
     }
 
+    case 'BOLA': {
+      const attempts = [
+        { user: 'user', resourceId: 'resource-own-3', owns: true },
+        { user: 'user', resourceId: 'resource-user-1', owns: false },
+        { user: 'user', resourceId: 'resource-admin-9', owns: false },
+        { user: 'service', resourceId: 'resource-user-2', owns: false },
+      ];
+      const results = attempts.map((attempt) => {
+        const allowed = attempt.owns;
+        addAudit({
+          event: allowed ? 'BOLA_AUTHZ_OK' : 'BOLA_AUTHZ_DENIED',
+          user: attempt.user,
+          ip,
+          result: allowed ? 'ALLOWED' : 'BLOCKED',
+          detail: `${attempt.user} accessed ${attempt.resourceId}; owns=${attempt.owns}`,
+        });
+        return {
+          payload: `GET /api/resources/${attempt.resourceId}`,
+          interceptedBy: allowed ? undefined : 'Object-level authorization middleware',
+          response: allowed ? '200 OK' : '403 Forbidden',
+          result: allowed ? 'ALLOWED' : 'FORBIDDEN',
+          detail: `Resource owner check: ${attempt.owns ? 'matched' : 'denied'}`,
+        };
+      });
+      return res.json({
+        attackType: 'BOLA',
+        attempts: results.length,
+        blocked: results.filter((result) => result.result === 'FORBIDDEN').length,
+        results,
+        mitigations: ['Object-level authorization on every endpoint', 'Session user compared against resource owner', 'Non-sequential resource identifiers', 'Audit log on every access denial'],
+      });
+    }
+
+    case 'MASS_ASSIGNMENT': {
+      const payloads = [
+        { body: '{"name":"attacker","role":"admin"}', field: 'role', stripped: true },
+        { body: '{"email":"x@example.test","isAdmin":true}', field: 'isAdmin', stripped: true },
+        { body: '{"name":"bob","balance":999999}', field: 'balance', stripped: true },
+        { body: '{"name":"alice","email":"alice@example.test"}', field: 'safe-profile-fields', stripped: false },
+      ];
+      const results = payloads.map((payload) => {
+        const stripped = payload.stripped;
+        addAudit({
+          event: stripped ? 'MASS_ASSIGN_BLOCKED' : 'UPDATE_ALLOWED',
+          user: 'user',
+          ip,
+          result: stripped ? 'BLOCKED' : 'ALLOWED',
+          detail: `Field ${payload.field} ${stripped ? 'stripped from request' : 'allowed'}`,
+        });
+        return {
+          payload: payload.body,
+          interceptedBy: stripped ? 'DTO field allowlist - privileged fields stripped' : undefined,
+          response: stripped ? '200 OK (privileged field dropped)' : '200 OK',
+          result: stripped ? 'STRIPPED' : 'ALLOWED',
+          detail: stripped ? `Privileged field ${payload.field} removed before persistence` : 'Safe profile fields passed through',
+        };
+      });
+      return res.json({
+        attackType: 'MASS_ASSIGNMENT',
+        attempts: results.length,
+        blocked: results.filter((result) => result.result === 'STRIPPED').length,
+        results,
+        mitigations: ['Explicit DTO allowlist', 'Privileged fields stripped before persistence', 'Unknown fields rejected or ignored by schema', 'Audit log on stripped field attempts'],
+      });
+    }
+
+    case 'TOKEN_REPLAY': {
+      const tokens = [
+        { token: 'Bearer eyJ...valid-but-revoked', jti: 'jti-abc123-revoked', revoked: true },
+        { token: 'Bearer eyJ...active-session', jti: 'jti-xyz789-active', revoked: false },
+        { token: 'Bearer eyJ...logged-out-token', jti: 'jti-def456-revoked', revoked: true },
+      ];
+      const results = tokens.map((token) => {
+        const revoked = token.revoked;
+        addAudit({
+          event: revoked ? 'TOKEN_REPLAY_BLOCKED' : 'TOKEN_VALID',
+          user: 'unknown',
+          ip,
+          result: revoked ? 'BLOCKED' : 'ALLOWED',
+          detail: `JTI ${token.jti}; revoked=${revoked}`,
+        });
+        return {
+          payload: token.token,
+          interceptedBy: revoked ? 'Token revocation list (JTI blocklist)' : undefined,
+          response: revoked ? '401 Unauthorized - token revoked' : '200 OK',
+          result: revoked ? 'REVOKED' : 'ALLOWED',
+          detail: `JTI: ${token.jti}`,
+        };
+      });
+      return res.json({
+        attackType: 'TOKEN_REPLAY',
+        attempts: results.length,
+        blocked: results.filter((result) => result.result === 'REVOKED').length,
+        results,
+        mitigations: ['JWT ID claim tracked at issue time', 'JTI added to blocklist on logout', 'Every request checks revocation before processing', 'Token expiry still enforced'],
+      });
+    }
+
+    case 'SSRF': {
+      const targets = [
+        { url: 'http://169.254.169.254/latest/meta-data/iam/security-credentials/', blocked: true, reason: 'Cloud metadata IP range blocked' },
+        { url: 'http://10.0.0.1/admin', blocked: true, reason: 'RFC-1918 private range blocked' },
+        { url: 'http://127.0.0.1/', blocked: true, reason: 'Loopback address blocked' },
+        { url: 'https://api.approved.example/data', blocked: false, reason: 'Allowlisted external destination permitted' },
+      ];
+      const results = targets.map((target) => {
+        const blocked = target.blocked;
+        addAudit({
+          event: blocked ? 'SSRF_BLOCKED' : 'PROXY_REQUEST_ALLOWED',
+          user: 'anonymous',
+          ip,
+          result: blocked ? 'BLOCKED' : 'ALLOWED',
+          detail: target.reason,
+        });
+        return {
+          payload: `url=${target.url}`,
+          interceptedBy: blocked ? `SSRF allowlist - ${target.reason}` : undefined,
+          response: blocked ? '400 Bad Request - destination not allowed' : '200 OK (proxied)',
+          result: blocked ? 'BLOCKED' : 'ALLOWED',
+          detail: target.reason,
+        };
+      });
+      return res.json({
+        attackType: 'SSRF',
+        attempts: results.length,
+        blocked: results.filter((result) => result.result === 'BLOCKED').length,
+        results,
+        mitigations: ['Strict destination allowlist', 'Private and loopback range blocking', 'Cloud metadata IP blocking', 'HTTPS-only external destinations'],
+      });
+    }
+
     default:
       return res.status(400).json({ error: 'Unknown attack type' });
   }
@@ -212,7 +343,7 @@ router.get('/status', (_req, res) => {
     blockedIPs: blockedIPs.size,
     rateLimitBuckets: rateLimitBuckets.size,
     auditLogSize: auditLog.length,
-    features: ['JWT validation demo', 'RBAC', 'Rate limiting', 'Account lockout', 'Audit logging', 'Input validation'],
+    features: ['JWT validation demo', 'RBAC', 'Rate limiting', 'Account lockout', 'Audit logging', 'Input validation', 'BOLA checks', 'Mass assignment stripping', 'Token replay revocation', 'SSRF allowlist'],
   });
 });
 
